@@ -68,7 +68,7 @@ export default function Home() {
               <p className="mt-6 max-w-lg text-lg leading-relaxed text-cream/75">Agenda, reservas online por barbero, comisiones automáticas y una caja donde cada número se explica solo. Desde el celular.</p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <Link href="/login?modo=registro" className="btn-gold px-6 py-3.5 text-base">Empieza gratis <ArrowRight className="h-4 w-4" /></Link>
-                <Link href="/b/demo" className="inline-flex items-center rounded-lg border border-white/20 px-6 py-3.5 text-base transition hover:border-gold/50 hover:bg-white/5">Ver página de reservas</Link>
+                <Link href="/demo" className="inline-flex items-center rounded-lg border border-white/20 px-6 py-3.5 text-base transition hover:border-gold/50 hover:bg-white/5">Ver página de reservas</Link>
               </div>
               <div className="mt-8 flex items-center gap-3 text-sm text-cream/60">
                 <div className="flex text-gold" aria-hidden>{[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}</div>

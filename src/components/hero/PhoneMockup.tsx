@@ -17,7 +17,7 @@ export function PhoneMockup() {
           <div className="grid grid-cols-2 gap-2 p-3">
             <div className="rounded-xl bg-white p-3 shadow-soft">
               <div className="text-[10px] text-ink/50">Cobrado hoy</div>
-              <div className="font-display text-xl font-semibold">$485.000</div>
+              <div className="font-display text-xl font-semibold">US$ 485.00</div>
             </div>
             <div className="rounded-xl bg-white p-3 shadow-soft">
               <div className="text-[10px] text-ink/50">Citas</div>
@@ -49,13 +49,13 @@ export function PhoneMockup() {
           <div className="m-3 rounded-xl bg-ink p-3 text-cream">
             <div className="text-[10px] uppercase tracking-widest text-gold">Efectivo esperado</div>
             <div className="mt-1 space-y-0.5 font-mono text-[10px] text-cream/70">
-              <div className="flex justify-between"><span>Fondo inicial</span><span>$50.000</span></div>
-              <div className="flex justify-between"><span>+ Ventas efectivo</span><span>$310.000</span></div>
-              <div className="flex justify-between"><span>− Gastos</span><span>$12.000</span></div>
+              <div className="flex justify-between"><span>Fondo inicial</span><span>US$ 50.00</span></div>
+              <div className="flex justify-between"><span>+ Ventas efectivo</span><span>US$ 310.00</span></div>
+              <div className="flex justify-between"><span>− Gastos</span><span>US$ 12.00</span></div>
             </div>
             <div className="mt-1 flex justify-between border-t border-white/10 pt-1 font-display text-base">
               <span>Total</span>
-              <span className="text-gold-300">$348.000</span>
+              <span className="text-gold-300">US$ 348.00</span>
             </div>
           </div>
           <div className="flex justify-around border-t border-border bg-white py-2.5 text-ink/40">

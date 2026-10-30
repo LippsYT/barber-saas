@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, toCents } from "@/lib/money";
 import { CommissionBreakdown } from "@/components/CommissionBreakdown";
 
 const METHODS = [["cash", "Efectivo"], ["card", "Tarjeta"], ["transfer", "Transferencia"], ["other", "Otro"]] as const;
@@ -29,15 +29,15 @@ export default function Cobro() {
     }
   })(); }, []);
   const subtotal = items.reduce((s, id) => s + Number(services.find((x) => x.id === id)?.price ?? 0), 0);
-  const total = subtotal - Number(discount || 0) + Number(tip || 0);
-  const paid = pays.reduce((s, p) => s + Number(p.amount || 0), 0);
+  const total = subtotal - toCents(discount) + toCents(tip);
+  const paid = pays.reduce((s, p) => s + toCents(p.amount), 0);
   const single = pays.length === 1;
 
   async function pay() {
     setErr(""); setBusy(true);
-    const payments = (single ? [{ method: pays[0].method, amount: total }] : pays.map((p) => ({ method: p.method, amount: Number(p.amount || 0) }))).filter((p) => p.amount > 0);
+    const payments = (single ? [{ method: pays[0].method, amount: total }] : pays.map((p) => ({ method: p.method, amount: toCents(p.amount) }))).filter((p) => p.amount > 0);
     const { data, error } = await sb().rpc("pay_sale", { p_business: biz.id, p_appointment: appt?.id ?? null, p_client: appt?.client_id ?? null, p_member: member,
-      p_items: items.map((id) => ({ item_type: "service", item_id: id })), p_discount: Number(discount || 0), p_tip: Number(tip || 0), p_payments: payments });
+      p_items: items.map((id) => ({ item_type: "service", item_id: id })), p_discount: toCents(discount), p_tip: toCents(tip), p_payments: payments });
     if (error) { setBusy(false); return setErr(errEs(error)); }
     const [{ data: sale }, { data: comm }] = await Promise.all([
       sb().from("sales").select("*").eq("id", data).single(),
@@ -75,7 +75,7 @@ export default function Cobro() {
           <select className="inp" value={p.method} onChange={(e) => setPays(pays.map((x, j) => (j === i ? { ...x, method: e.target.value } : x)))}>{METHODS.map((m) => <option key={m[0]} value={m[0]}>{m[1]}</option>)}</select>
           {!single && <input className="inp" type="number" placeholder="Monto" value={p.amount} onChange={(e) => setPays(pays.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))} />}
         </div>))}
-        {single ? <button className="text-sm underline" onClick={() => setPays([{ method: pays[0].method, amount: String(total) }, { method: "card", amount: "0" }])}>Dividir pago</button>
+        {single ? <button className="text-sm underline" onClick={() => setPays([{ method: pays[0].method, amount: (total / 100).toFixed(2) }, { method: "card", amount: "0" }])}>Dividir pago</button>
           : <p className={`text-sm ${paid === total ? "text-green-700" : "text-red-600"}`}>Suma pagos: {formatMoney(paid, biz.currency)} {paid !== total && `(faltan ${formatMoney(total - paid, biz.currency)})`}</p>}
       </div>
       <button className="btn w-full" disabled={busy || !member || !items.length || (!single && paid !== total)} onClick={pay}>{busy ? "Cobrando…" : `Cobrar ${formatMoney(total, biz.currency)}`}</button>

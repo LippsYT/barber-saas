@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
-import { formatMoney, formatSigned } from "@/lib/money";
-import { COP_DENOMINATIONS, denominationsTotal, expectedCash, otherMethodsTotals } from "@/lib/cash";
+import { formatMoney, formatSigned, toCents } from "@/lib/money";
+import { USD_DENOMINATIONS, denominationsTotal, expectedCash, otherMethodsTotals } from "@/lib/cash";
 import { LedgerCalc } from "@/components/LedgerCalc";
 
 export default function Caja() {
@@ -20,16 +20,16 @@ export default function Caja() {
     setHistory(h ?? []); setLoaded(true);
   };
   useEffect(() => { load(); }, []);
-  async function open() { const { error } = await sb().rpc("open_cash_session", { p_business: biz.id, p_float: Number(float || 0) }); if (error) return setErr(errEs(error)); load(); }
+  async function open() { const { error } = await sb().rpc("open_cash_session", { p_business: biz.id, p_float: toCents(float) }); if (error) return setErr(errEs(error)); load(); }
   async function addExpense(e: React.FormEvent) {
     e.preventDefault(); setErr("");
-    const { error } = await sb().rpc("record_expense", { p_business: biz.id, p_category: null, p_amount: Number(exp.amount), p_method: exp.method, p_description: exp.desc });
+    const { error } = await sb().rpc("record_expense", { p_business: biz.id, p_category: null, p_amount: toCents(exp.amount), p_method: exp.method, p_description: exp.desc });
     if (error) return setErr(errEs(error)); setExp({ amount: "", desc: "", method: "cash" }); load();
   }
   const cashEntries = entries.filter((e) => e.account === "cash");
   const calc = sess ? expectedCash(Number(sess.opening_float), cashEntries) : null;
   const byDen = denominationsTotal(counts);
-  const counted = manual !== "" ? Number(manual) : byDen;
+  const counted = manual !== "" ? toCents(manual) : byDen;
   const diff = calc ? counted - calc.expected : 0;
   async function close() {
     setErr("");
@@ -70,7 +70,7 @@ export default function Caja() {
           <button className="btn2 w-full">Guardar gasto</button></form>
         <div className="card space-y-2"><div className="font-display text-lg font-semibold">Cierre de caja</div>
           <p className="text-sm text-muted-foreground">Cuenta los billetes y monedas:</p>
-          <div className="grid grid-cols-3 gap-2">{COP_DENOMINATIONS.map((d) => (
+          <div className="grid grid-cols-3 gap-2">{USD_DENOMINATIONS.map((d) => (
             <label key={d} className="text-xs">{formatMoney(d, biz.currency)}<input className="inp py-2" type="number" min={0} value={counts[d] ?? ""} onChange={(e) => setCounts({ ...counts, [d]: Number(e.target.value) })} /></label>))}</div>
           <label className="lbl">…o escribe el total contado</label><input className="inp" type="number" min={0} placeholder={String(byDen)} value={manual} onChange={(e) => setManual(e.target.value)} />
           <div className="font-mono text-sm">

@@ -50,7 +50,7 @@ export function Booking({ slug, barberSlug }: { slug: string; barberSlug?: strin
     e.preventDefault(); setBusy(true); setErr("");
     const { data, error } = await sb().rpc("public_create_booking", { p_slug: slug, p_member: slot.member_id, p_service_ids: svc, p_starts_at: slot.slot_start, p_name: form.name, p_phone: form.phone, p_opt_in: form.optIn, p_notes: null });
     setBusy(false); if (error) return setErr(errEs(error));
-    location.href = `/b/${slug}/cita/${data.manage_token}`;
+    location.href = `/${slug}/cita/${data.manage_token}`;
   }
   if (err && !cat) return <main className="grid min-h-screen place-items-center bg-ink p-6 text-center text-cream"><div><CalendarX2 className="mx-auto mb-3 h-10 w-10 text-gold" /><p className="font-display text-2xl">{err}</p></div></main>;
   if (!cat) return <main className="grid min-h-screen place-items-center bg-ink text-cream"><div className="flex flex-col items-center gap-3"><Scissors className="h-7 w-7 animate-pulse text-gold" /><p className="font-display text-lg">Abriendo la agenda…</p></div></main>;
@@ -82,9 +82,9 @@ export function Booking({ slug, barberSlug }: { slug: string; barberSlug?: strin
           <Avatar name={b.name} src={b.photo_url} size={56} /><span className="text-sm font-medium">{b.name}</span></m.button>))}
         {!barbers.length && <p className="col-span-full text-sm text-muted-foreground">Nadie trabaja este día. Prueba otra fecha.</p>}</div></Step>}
       {member && <Step n={2 + stepB} title="Servicio" done={svc.length > 0}><div className="space-y-2">{services.map((s: any) => (
-        <label key={s.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition active:scale-[.99] ${svc.includes(s.id) ? "border-gold bg-gold/10 shadow-sm" : "border-border hover:border-gold"}`}>
-          <span className="flex items-center gap-3"><input type="checkbox" className="h-5 w-5 accent-[#c9a35c]" checked={svc.includes(s.id)} onChange={(e) => setSvc(e.target.checked ? [...svc, s.id] : svc.filter((x) => x !== s.id))} /><span><span className="block font-medium">{s.name}</span><span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{s.duration_min} min</span></span></span>
-          <span className="font-display text-lg font-semibold">{formatMoney(Number(s.price), cur)}</span></label>))}</div></Step>}
+        <label key={s.id} className={`flex cursor-pointer items-start justify-between gap-3 rounded-xl border p-3 transition active:scale-[.99] ${svc.includes(s.id) ? "border-gold bg-gold/10 shadow-sm" : "border-border hover:border-gold"}`}>
+          <span className="flex items-start gap-3"><input type="checkbox" className="h-5 w-5 accent-[#c9a35c]" checked={svc.includes(s.id)} onChange={(e) => setSvc(e.target.checked ? [...svc, s.id] : svc.filter((x) => x !== s.id))} /><span><span className="block font-medium first-letter:uppercase">{s.name}</span>{s.description && <span className="mt-0.5 block text-xs leading-snug text-muted-foreground line-clamp-2">{s.description}</span>}<span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{s.duration_min} min</span></span></span>
+          <span className="whitespace-nowrap font-display text-lg font-semibold">{formatMoney(Number(s.price), cur)}</span></label>))}</div></Step>}
       {slots && <Step n={3 + stepB} title="Horario" done={!!slot}><div className="grid grid-cols-4 gap-2">{slots.map((s) => (
         <m.button key={s.slot_start} whileHover={{ y: -2 }} whileTap={{ scale: 0.94 }} className={`min-h-11 rounded-lg border py-2.5 text-sm font-medium tabular-nums transition ${slot?.slot_start === s.slot_start ? "border-ink bg-ink text-cream shadow-md" : "border-border bg-card hover:border-gold"}`} onClick={() => setSlot(s)}>{localTime(new Date(s.slot_start).getTime(), tz)}</m.button>))}</div>
         {!slots.length && <p className="text-sm text-muted-foreground">No hay horarios libres. Prueba otro día.</p>}</Step>}

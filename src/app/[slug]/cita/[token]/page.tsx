@@ -33,7 +33,7 @@ export default function Cita({ params }: { params: Promise<{ slug: string; token
         </div>
         <p className="text-sm text-muted-foreground">Guarda este enlace para ver o cancelar tu cita.</p>
         {["reserved", "confirmed"].includes(b.status) && <button className="btn2 w-full" onClick={cancel}>Cancelar cita</button>}
-        <a className="btn-gold w-full" href={`/b/${slug}`}>Reservar otra cita</a>
+        <a className="btn-gold w-full" href={`/${slug}`}>Reservar otra cita</a>
         {msg && <p className="text-center text-sm">{msg}</p>}
       </div>
     </main>

@@ -44,7 +44,7 @@ describe("cierre de caja", () => {
     expect(closeCash(127000, 120000)).toMatchObject({ difference: -7000, needsNote: true });
     expect(closeCash(127000, 130000).difference).toBe(3000);
   });
-  it("denominaciones", () => expect(denominationsTotal({ "50000": 2, "1000": 5, "500": 0 })).toBe(105000));
+  it("denominaciones", () => expect(denominationsTotal({ "2000": 2, "100": 5, "25": 0 })).toBe(4500));
 });
 
 describe("venta y pagos divididos", () => {

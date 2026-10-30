@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, toCents } from "@/lib/money";
 
 export default function Servicios() {
   const { biz } = useApp();
@@ -13,7 +13,7 @@ export default function Servicios() {
   useEffect(() => { load(); }, []);
   async function add(e: React.FormEvent) {
     e.preventDefault(); setErr("");
-    const { error } = await sb().from("services").insert({ business_id: biz.id, name: name.trim(), duration_min: Number(dur), price: Number(price) });
+    const { error } = await sb().from("services").insert({ business_id: biz.id, name: name.trim(), duration_min: Number(dur), price: toCents(price) });
     if (error) return setErr(errEs(error));
     setName(""); setPrice(""); load();
   }
@@ -24,7 +24,7 @@ export default function Servicios() {
       <form onSubmit={add} className="card mb-4 grid grid-cols-2 gap-2">
         <div className="col-span-2"><label className="lbl">Nombre</label><input className="inp" required placeholder="Corte clásico" value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div><label className="lbl">Duración (min)</label><input className="inp" type="number" min={5} step={5} required value={dur} onChange={(e) => setDur(e.target.value)} /></div>
-        <div><label className="lbl">Precio</label><input className="inp" type="number" min={0} required value={price} onChange={(e) => setPrice(e.target.value)} /></div>
+        <div><label className="lbl">Precio (US$)</label><input className="inp" type="number" min={0} step="0.01" required placeholder="25.00" value={price} onChange={(e) => setPrice(e.target.value)} /></div>
         <button className="btn col-span-2">Agregar servicio</button>
         {err && <p className="col-span-2 text-sm text-red-600">{err}</p>}
       </form>

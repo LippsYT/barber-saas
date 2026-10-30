@@ -42,12 +42,13 @@ export function closeCash(expected: number, counted: number): CashClose {
   return { expected, counted, difference, needsNote: difference !== 0 };
 }
 
-/** Conteo por denominación: { "50000": 3, "1000": 10 } → total. */
+/** Conteo por denominación: { "2000": 3, "100": 10 } (centavos) → total. */
 export function denominationsTotal(counts: Record<string, number>): number {
   return Object.entries(counts).reduce((s, [d, n]) => s + Number(d) * Math.max(0, Math.floor(n)), 0);
 }
 
-export const COP_DENOMINATIONS = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50];
+/** Billetes y monedas USD en centavos. */
+export const USD_DENOMINATIONS = [10000, 5000, 2000, 1000, 500, 100, 25, 10, 5, 1];
 
 /** Ventas por método de pago (informativo, no cuentan en efectivo esperado). */
 export function otherMethodsTotals(entries: LedgerEntry[]): Record<string, number> {

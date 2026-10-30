@@ -1,4 +1,4 @@
-import { roundHalfUp } from "./money";
+import { formatMoney, roundHalfUp } from "./money";
 
 export type ItemType = "service" | "product" | "tip";
 
@@ -136,7 +136,7 @@ export function explainCommission(snap: RuleSnapshot, amount: number): ExplainLi
     return out;
   }
   const r = snap.rule;
-  out.push({ label: `Regla (${SCOPE_ES[r.scope]}) ${r.kind === "percent" ? "" : "monto fijo"}`, text: r.kind === "percent" ? `${r.value} %` : `${r.value} por unidad`, op: "×" });
+  out.push({ label: `Regla (${SCOPE_ES[r.scope]}) ${r.kind === "percent" ? "" : "monto fijo"}`, text: r.kind === "percent" ? `${r.value} %` : `${formatMoney(r.value)} por unidad`, op: "×" });
   out.push({ label: amount < 0 ? "Comisión (reversada)" : "Comisión", amount, op: "=" });
   return out;
 }
