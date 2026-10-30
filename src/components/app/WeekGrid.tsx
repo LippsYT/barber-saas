@@ -28,15 +28,15 @@ export function WeekGrid({ days, blocks, active, onDay, onBlock }: {
   const colorOf = (id: string) => PALETTE[Math.max(0, order.indexOf(id)) % PALETTE.length];
   const height = (END - START) * PX;
   return (
-    <div>
-      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+    <div className="min-w-0">
+      <div className="mb-3 flex gap-2 hscroll pb-1">
         {[...members.entries()].map(([id, name]) => {
           const c = colorOf(id);
           return <span key={id} className="pill shrink-0" style={{ background: c.bg, color: c.fg }}>{name.split(" ")[0]}</span>;
         })}
         {members.size === 0 && <span className="text-sm text-ink/50">Los bloques usan un color por barbero.</span>}
       </div>
-      <div className="overflow-x-auto rounded-[1.5rem] bg-white shadow-soft">
+      <div className="hscroll rounded-[1.5rem] bg-white shadow-soft">
         <div className="flex min-w-[640px]">
           <div className="w-12 shrink-0 border-r border-black/5 pt-12 text-[10px] text-ink/40">
             {Array.from({ length: 14 }, (_, i) => 8 + i).map((h) => (

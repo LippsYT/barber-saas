@@ -44,7 +44,7 @@ export function Landing() {
   return (
     <div className="bg-[#F4F1E8] text-ink">
       <a href="#inicio" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#D6FF4A] focus:text-ink focus:px-3 focus:py-2">Saltar al contenido</a>
-      <header className="sticky top-0 z-30 border-b border-black/5 bg-[#F4F1E8]/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-black/5 bg-[#F4F1E8]/85 pt-safe backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Logo />
           <nav className="hidden gap-6 text-sm font-semibold text-ink/70 md:flex">

@@ -109,7 +109,7 @@ export default function Agenda() {
           <button aria-label="Semana siguiente" className="btn2 h-10 w-10 p-0" onClick={() => setDay(addDays(start, 7))}><ChevronRight className="h-4 w-4" /></button>
         </div>
       </div>
-      {role !== "barber" && <div className="mb-3 flex gap-2 overflow-x-auto">
+      {role !== "barber" && <div className="mb-3 flex gap-2 hscroll">
         <button className={`chip ${!filter ? "chip-on" : ""}`} onClick={() => setFilter("")}>Todos</button>
         {members.map((m) => <button key={m.id} className={`chip whitespace-nowrap ${filter === m.id ? "chip-on" : ""}`} onClick={() => setFilter(m.id)}>{m.display_name}</button>)}
       </div>}

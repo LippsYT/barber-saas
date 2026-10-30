@@ -108,7 +108,7 @@ export default function Onboarding() {
   if (!ready) return <main className="grid min-h-screen place-items-center"><Logo light /></main>;
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg px-4 py-5">
+    <main className="mx-auto min-h-screen max-w-lg px-4 pb-[calc(1.25rem+var(--sab))] pt-[calc(1.25rem+var(--sat))]">
       <div className="mb-6 flex items-center justify-between">
         <button aria-label="Atrás" className="grid h-10 w-10 place-items-center rounded-full bg-white/10" onClick={() => step === 0 ? router.push("/") : setStep(step - 1)}><ChevronLeft /></button>
         <div className="text-sm font-extrabold">Configura tu cuenta</div>

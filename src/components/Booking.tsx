@@ -122,8 +122,8 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
 
   return (
     <LazyMotion features={domAnimation} strict>
-      <main className="paper-blue min-h-screen pb-10 text-white">
-        <header className="mx-auto flex max-w-lg items-center justify-between px-4 pb-2 pt-4">
+      <main className="paper-blue min-h-screen pb-[calc(2.5rem+var(--sab))] text-white">
+        <header className="mx-auto flex max-w-lg items-center justify-between px-4 pb-2 pt-[calc(1rem+var(--sat))]">
           <button aria-label="Atrás" className="grid h-10 w-10 place-items-center rounded-full bg-white/15" onClick={() => step === 0 ? history.back() : setStep(step - 1)}><ChevronLeft /></button>
           <Logo light className="text-xl" />
           <span className="text-xs font-extrabold">{step + 1}/{steps.length}</span>
@@ -138,7 +138,7 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
           <m.section key={current} className="mt-6 rounded-[1.7rem] bg-[#F4F1E8] p-4 text-ink" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
             <h2 className="display mb-3 text-3xl">{current === "fecha" ? "Fecha" : current === "barbero" ? "Barbero" : current === "servicio" ? "Servicio" : current === "horario" ? "Horario" : "Tus datos"}</h2>
 
-            {current === "fecha" && <div className="flex gap-2 overflow-x-auto pb-1">{days.map((d) => (
+            {current === "fecha" && <div className="flex gap-2 hscroll pb-1">{days.map((d) => (
               <button key={d} className={`flex h-20 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border ${d === date ? "border-ink bg-ink text-white" : "border-black/10 bg-white"}`} onClick={() => { setDate(d); if (!barberSlug) setMember(null); setSvc([]); }}>
                 <span className="text-[10px] font-bold uppercase">{DAYS[weekdayOf(d)]}</span>
                 <span className="font-display text-2xl font-extrabold">{d.slice(8)}</span>
@@ -156,7 +156,7 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
             </div>}
 
             {current === "servicio" && <>
-              {categories.length > 1 && <div className="mb-3 flex gap-2 overflow-x-auto">{["", ...categories].map((c) => (
+              {categories.length > 1 && <div className="mb-3 flex gap-2 hscroll">{["", ...categories].map((c) => (
                 <button key={c || "todas"} className={`pill shrink-0 ${catFilter === c ? "bg-ink text-white" : "bg-white"}`} onClick={() => setCatFilter(c)}>{c || "Todos"}</button>
               ))}</div>}
               <div className="space-y-2">{shown.map((s) => {

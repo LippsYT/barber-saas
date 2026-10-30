@@ -9,6 +9,20 @@
     --muted: 40 24% 91%; --muted-foreground: 222 10% 36%;
     --accent: 73 100% 64%; --accent-foreground: 224 39% 6%;
     --destructive: 350 100% 65%; --border: 36 18% 84%; --ring: 226 100% 59%; --radius: 1rem;
+    /* Safe areas (iPhone con notch / indicador de inicio; requiere viewport-fit=cover). */
+    --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px);
+    --nav-h: 4rem; /* alto de la barra inferior sin safe-area */
+  }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  html, body { overflow-x: clip; max-width: 100%; }
+  body { overflow-wrap: break-word; padding-left: var(--sal); padding-right: var(--sar); }
+  /* iOS hace zoom en campos con letra < 16px. */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: max(16px, 1em); }
+  img, svg, video { max-width: 100%; }
+  @media (display-mode: standalone) {
+    html { overscroll-behavior-y: none; }
+    body { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
   }
   html { scroll-behavior: smooth; }
   body { @apply bg-background text-foreground font-sans antialiased; }
@@ -32,6 +46,11 @@
   .pill { @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wide; }
 }
 @layer utilities {
+  .pt-safe { padding-top: var(--sat); }
+  .pb-safe { padding-bottom: var(--sab); }
+  .pb-app-nav { padding-bottom: calc(var(--nav-h) + var(--sab) + 1.75rem); }
+  .bottom-app-nav { bottom: calc(var(--nav-h) + var(--sab) + 1rem); }
+  .hscroll { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; max-width: 100%; }
   .paper {
     background-color: #F4F1E8;
     background-image: linear-gradient(rgba(7,11,20,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(7,11,20,.05) 1px, transparent 1px);

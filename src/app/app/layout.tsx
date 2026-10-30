@@ -51,12 +51,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <button className="mt-3 flex items-center gap-2 text-sm text-white/70" onClick={logout}><LogOut className="h-4 w-4" />Salir</button>
           </div>
         </aside>
-        <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 flex items-center justify-between bg-[#F4F1E8]/90 px-4 py-3 backdrop-blur md:hidden">
+        <div className="min-w-0 flex-1 overflow-x-clip">
+          <header className="sticky top-0 z-20 flex items-center justify-between bg-[#F4F1E8]/90 px-4 pb-3 pt-[calc(.75rem+var(--sat))] backdrop-blur md:hidden">
             <Logo className="text-xl" />
             <button className="text-sm font-bold text-ink/60" onClick={logout}>Salir</button>
           </header>
-          <div className="mx-auto max-w-3xl px-4 pb-28 pt-4 md:px-8 md:pb-12 md:pt-8">
+          <div className="mx-auto max-w-3xl px-4 pb-app-nav pt-4 md:px-8 md:pb-12 md:pt-8">
             <motion.div key={path} initial={entered && reduce === false ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
               {children}
             </motion.div>
@@ -64,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <TabBar path={path} canCash={ctx.canCash} open={more} onToggle={() => setMore(!more)} />
         {more && <div className="fixed inset-0 z-20 bg-ink/40 md:hidden" onClick={() => setMore(false)}>
-          <div className="absolute inset-x-4 bottom-24 space-y-2 rounded-3xl bg-white p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute inset-x-4 bottom-app-nav space-y-2 rounded-3xl bg-white p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <Link href="/app/agenda?nueva=1" className="btn w-full">Nueva cita</Link>
             <Link href="/app/cobro" className="btn2 w-full">Nueva venta</Link>
             {ctx.isManager && <Link href="/app/servicios" className="btn2 w-full">Nuevo servicio</Link>}

@@ -7,7 +7,7 @@ export function LedgerCalc({ entries, currency, start = 0, startLabel }: { entri
   let run = start;
   const lines = withRunningSum(entries);
   return (
-    <div className="overflow-x-auto font-mono text-xs">
+    <div className="hscroll font-mono text-xs">
       {startLabel && <div className="flex justify-between gap-2 py-1"><span>+ {formatMoney(start, currency)} {startLabel}</span><span>acum. {formatMoney(start, currency)}</span></div>}
       {lines.map((l) => { run = start + l.running; return (
         <div key={l.entry.id} className={`flex justify-between gap-2 border-b py-1 ${l.entry.reversal_of ? "italic" : ""}`}>

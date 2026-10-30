@@ -10,7 +10,7 @@ export function periodRange(kind: PeriodKind, anchor: string, tz: string) {
 export function PeriodPicker({ kind, setKind, anchor, setAnchor, tz }: { kind: PeriodKind; setKind: (k: PeriodKind) => void; anchor: string; setAnchor: (a: string) => void; tz: string }) {
   return (
     <div className="mb-4 space-y-2">
-      <div className="flex gap-2 overflow-x-auto pb-1">{([["day", "Día"], ["week", "Semana"], ["month", "Mes"]] as const).map(([k, l]) => <button key={k} className={`chip ${kind === k ? "chip-on" : "bg-card"}`} onClick={() => setKind(k)}>{l}</button>)}
+      <div className="flex gap-2 hscroll pb-1">{([["day", "Día"], ["week", "Semana"], ["month", "Mes"]] as const).map(([k, l]) => <button key={k} className={`chip ${kind === k ? "chip-on" : "bg-card"}`} onClick={() => setKind(k)}>{l}</button>)}
         <button className="chip bg-card" onClick={() => setAnchor(localDate(Date.now(), tz))}>Hoy</button></div>
       <input type="date" className="inp" value={anchor} onChange={(e) => setAnchor(e.target.value)} />
     </div>
