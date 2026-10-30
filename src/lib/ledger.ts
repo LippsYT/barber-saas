@@ -14,6 +14,8 @@ export interface LedgerEntry {
   member_id?: string | null;
   description: string;
   reversal_of?: string | null;
+  /** orden total estable dentro del mismo instante (ledger_entries.seq) */
+  seq?: number;
   source_table?: string | null;
   source_id?: string | null;
 }
@@ -29,9 +31,9 @@ export function balance(entries: Pick<LedgerEntry, "direction" | "amount" | "acc
 
 export interface RunningLine<T> { entry: T; signed: number; running: number }
 
-/** Orden cronológico (occurred_at, luego id) con acumulado. El último acumulado === balance(). */
+/** Orden cronológico (occurred_at, luego seq) con acumulado. El último acumulado === balance(). */
 export function withRunningSum<T extends LedgerEntry>(entries: T[]): RunningLine<T>[] {
-  const sorted = [...entries].sort((a, b) => (a.occurred_at < b.occurred_at ? -1 : a.occurred_at > b.occurred_at ? 1 : a.id < b.id ? -1 : 1));
+  const sorted = [...entries].sort((a, b) => (a.occurred_at < b.occurred_at ? -1 : a.occurred_at > b.occurred_at ? 1 : (a.seq ?? 0) - (b.seq ?? 0) || (a.id < b.id ? -1 : 1)));
   let running = 0;
   return sorted.map((entry) => {
     const s = signed(entry);

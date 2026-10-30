@@ -88,8 +88,9 @@ create table expenses (
 -- ===== LEDGER: append-only =====
 create table ledger_entries (
   id uuid primary key default gen_random_uuid(),
+  seq bigint generated always as identity, -- orden total estable (varios asientos comparten occurred_at)
   business_id uuid not null references businesses(id) on delete cascade,
-  occurred_at timestamptz not null default now(),
+  occurred_at timestamptz not null default clock_timestamp(),
   type ledger_type not null,
   direction smallint not null check (direction in (1, -1)),
   amount bigint not null check (amount > 0),

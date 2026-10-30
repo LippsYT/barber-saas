@@ -234,15 +234,15 @@ end $$;
 
 create or replace function public.request_void_sale(p_sale uuid, p_reason text) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare s sales; r member_role; id uuid;
+declare s sales; r member_role; new_id uuid;
 begin
   select * into s from sales where id = p_sale;
   if not found then raise exception 'sale_not_found'; end if;
   r := _need_role(s.business_id, 'receptionist', 'barber');
   if r = 'barber' and s.member_id <> my_member_id(s.business_id) then raise exception 'forbidden'; end if;
   if length(trim(coalesce(p_reason,''))) < 3 then raise exception 'reason_required'; end if;
-  insert into void_requests(business_id, sale_id, requested_by, reason) values (s.business_id, p_sale, auth.uid(), p_reason) returning void_requests.id into id;
-  return id;
+  insert into void_requests(business_id, sale_id, requested_by, reason) values (s.business_id, p_sale, auth.uid(), p_reason) returning void_requests.id into new_id;
+  return new_id;
 end $$;
 
 create or replace function public.decide_void_request(p_request uuid, p_approve boolean) returns void
@@ -260,7 +260,7 @@ end $$;
 create or replace function public.record_expense(p_business uuid, p_category uuid, p_amount bigint, p_method pay_method,
   p_description text, p_receipt_url text default null) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare r member_role := _need_role(p_business, 'owner', 'admin', 'receptionist'); id uuid; sess uuid; b businesses; lim bigint;
+declare r member_role := _need_role(p_business, 'owner', 'admin', 'receptionist'); new_id uuid; sess uuid; b businesses; lim bigint;
 begin
   select * into b from businesses where id = p_business;
   lim := coalesce((b.settings->>'receptionist_expense_limit')::bigint, 200000);
@@ -270,10 +270,10 @@ begin
   if p_category is not null and not exists (select 1 from expense_categories where id = p_category and business_id = p_business) then raise exception 'invalid_category'; end if;
   sess := _ensure_session(p_business);
   insert into expenses(business_id, category_id, amount, method, description, receipt_url, cash_session_id, created_by)
-    values (p_business, p_category, p_amount, p_method, trim(p_description), p_receipt_url, sess, auth.uid()) returning expenses.id into id;
-  perform _ledger(p_business, 'expense', -1, p_amount, p_method, _account_of(p_method), null, 'expenses', id,
+    values (p_business, p_category, p_amount, p_method, trim(p_description), p_receipt_url, sess, auth.uid()) returning expenses.id into new_id;
+  perform _ledger(p_business, 'expense', -1, p_amount, p_method, _account_of(p_method), null, 'expenses', new_id,
     format('Gasto: %s (%s)', trim(p_description), _method_es(p_method)), sess);
-  return id;
+  return new_id;
 end $$;
 
 create or replace function public.void_expense(p_expense uuid, p_reason text) returns void
@@ -296,13 +296,13 @@ end $$;
 -- ===== CAJA =====
 create or replace function public.open_cash_session(p_business uuid, p_float bigint) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare id uuid;
+declare new_id uuid;
 begin
   perform _need_role(p_business, 'owner', 'admin', 'receptionist');
   if p_float < 0 then raise exception 'invalid_amount'; end if;
   if exists (select 1 from cash_sessions where business_id = p_business and status = 'open') then raise exception 'session_already_open'; end if;
-  insert into cash_sessions(business_id, opened_by, opening_float) values (p_business, auth.uid(), p_float) returning cash_sessions.id into id;
-  return id;
+  insert into cash_sessions(business_id, opened_by, opening_float) values (p_business, auth.uid(), p_float) returning cash_sessions.id into new_id;
+  return new_id;
 end $$;
 
 create or replace function public.close_cash_session(p_session uuid, p_counted bigint, p_denominations jsonb default null, p_notes text default null)
@@ -326,7 +326,7 @@ end $$;
 -- ===== PERSONAL: adelantos y liquidaciones =====
 create or replace function public.register_advance(p_business uuid, p_member uuid, p_amount bigint, p_method pay_method, p_note text default null)
 returns uuid language plpgsql security definer set search_path = public as $$
-declare id uuid; sess uuid; nm text;
+declare new_id uuid; sess uuid; nm text;
 begin
   perform _need_role(p_business, 'owner', 'admin');
   select display_name into nm from memberships where id = p_member and business_id = p_business;
@@ -334,10 +334,10 @@ begin
   if p_amount is null or p_amount <= 0 then raise exception 'invalid_amount'; end if;
   sess := case when p_method = 'cash' then _ensure_session(p_business) end;
   insert into staff_advances(business_id, member_id, amount, method, note, created_by)
-    values (p_business, p_member, p_amount, p_method, p_note, auth.uid()) returning staff_advances.id into id;
-  perform _ledger(p_business, 'payout', -1, p_amount, p_method, _account_of(p_method), p_member, 'staff_advances', id, format('Adelanto a %s (%s)', nm, _method_es(p_method)), sess);
-  perform _ledger(p_business, 'payout', -1, p_amount, null, 'payable_staff', p_member, 'staff_advances', id, format('Adelanto a %s: descuenta lo que se le debe', nm), null);
-  return id;
+    values (p_business, p_member, p_amount, p_method, p_note, auth.uid()) returning staff_advances.id into new_id;
+  perform _ledger(p_business, 'payout', -1, p_amount, p_method, _account_of(p_method), p_member, 'staff_advances', new_id, format('Adelanto a %s (%s)', nm, _method_es(p_method)), sess);
+  perform _ledger(p_business, 'payout', -1, p_amount, null, 'payable_staff', p_member, 'staff_advances', new_id, format('Adelanto a %s: descuenta lo que se le debe', nm), null);
+  return new_id;
 end $$;
 
 create or replace function public._recalc_payout(p_payout uuid) returns void
@@ -451,7 +451,7 @@ end $$;
 -- ===== MENSAJES =====
 create or replace function public.schedule_message(p_business uuid, p_client uuid, p_body text, p_send_at timestamptz) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare c clients; id uuid;
+declare c clients; new_id uuid;
 begin
   perform _need_role(p_business, 'owner', 'admin', 'receptionist');
   select * into c from clients where id = p_client and business_id = p_business;
@@ -460,8 +460,8 @@ begin
   if c.phone is null then raise exception 'client_no_phone'; end if;
   if length(trim(coalesce(p_body,''))) < 1 then raise exception 'body_required'; end if;
   insert into scheduled_messages(business_id, client_id, kind, to_phone, payload, send_at, created_by)
-    values (p_business, p_client, 'custom', c.phone, jsonb_build_object('body', p_body), p_send_at, auth.uid()) returning scheduled_messages.id into id;
-  return id;
+    values (p_business, p_client, 'custom', c.phone, jsonb_build_object('body', p_body), p_send_at, auth.uid()) returning scheduled_messages.id into new_id;
+  return new_id;
 end $$;
 
 -- Solo service_role (cron / Edge Function): toma mensajes vencidos con SKIP LOCKED.
