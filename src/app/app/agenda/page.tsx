@@ -8,6 +8,8 @@ import { addDays, localDate, localTime, localToUtcMs, weekStart, weekdayOf } fro
 import { formatMoney } from "@/lib/money";
 import { Plus, ChevronLeft, ChevronRight, Globe2 } from "lucide-react";
 import { WeekGrid, type WeekBlock } from "@/components/app/WeekGrid";
+import { AttendPanel } from "@/components/app/AttendPanel";
+import { toCents } from "@/lib/money";
 
 const ST: Record<string, [string, string]> = {
   reserved: ["Reservada", "bg-sky-100 text-sky-900"], confirmed: ["Confirmada", "bg-indigo-100 text-indigo-900"], in_progress: ["En curso", "bg-[#D6FF4A] text-ink"],
@@ -33,6 +35,11 @@ export default function Agenda() {
   const [form, setForm] = useState(false);
   const [f, setF] = useState({ member: role === "barber" ? memberId : "", service: "", time: "10:00", name: "", phone: "" });
   const [err, setErr] = useState("");
+  const [attendId, setAttendId] = useState<string | null>(null);
+  const [payMethod, setPayMethod] = useState<"cash" | "transfer">("cash");
+  const [adj, setAdj] = useState("");
+  const [tip, setTip] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (new URLSearchParams(location.search).get("nueva") === "1") setForm(true); }, []);
   useEffect(() => { (async () => {
@@ -75,6 +82,23 @@ export default function Agenda() {
     if (error) return setErr(errEs(error));
     await sb().from("appointment_items").insert({ business_id: biz.id, appointment_id: a.id, service_id: svc.id, name: svc.name, price: svc.price, duration_min: svc.duration_min });
     setForm(false); setF({ ...f, name: "", phone: "" }); load();
+  }
+  function openAttend(id: string) {
+    setAttendId(id); setAdj(""); setTip(""); setPayMethod("cash"); setErr("");
+  }
+  async function attend(a: { id: string }) {
+    setBusy(true); setErr("");
+    const { error } = await sb().rpc("attend_appointment", { p_appointment: a.id, p_method: payMethod, p_adjustment: toCents(adj), p_tip: toCents(tip) });
+    setBusy(false);
+    if (error) return setErr(errEs(error));
+    setAttendId(null); load();
+  }
+  async function noShow(a: { id: string }) {
+    setBusy(true); setErr("");
+    const { error } = await sb().rpc("mark_no_show", { p_appointment: a.id });
+    setBusy(false);
+    if (error) return setErr(errEs(error));
+    setAttendId(null); load();
   }
   async function setStatus(a: { id: string }, status: string) {
     const patch: Record<string, string> = { status };
@@ -137,15 +161,19 @@ export default function Agenda() {
               <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{a.client?.full_name ?? "Sin cliente"}</span>
                 <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${ST[a.status]?.[1] ?? ""}`}>{ST[a.status]?.[0] ?? a.status}</span>
                 {paid.has(a.id) && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white">Pagada</span>}</div>
-              <div className="text-sm">{a.items?.map((i: { name: string }) => i.name).join(", ")}</div>
+              <div className="text-sm">{a.items?.map((i: { name: string }) => i.name).join(", ")}{a.items?.length ? <span className="text-ink/50"> · {formatMoney((a.items as { price?: number }[]).reduce((s, i) => s + Number(i.price ?? 0), 0), biz.currency)}</span> : null}</div>
               <div className="mt-1 text-xs text-ink/50">{a.member?.display_name}{a.source === "booking_link" && <span className="ml-2 inline-flex items-center gap-1"><Globe2 className="h-3 w-3" />reservó online</span>}</div>
             </div>
           </div>
-          {!["cancelled", "no_show"].includes(a.status) && <div className="mt-3 flex flex-wrap gap-2 border-t border-black/5 pt-3">
-            {!paid.has(a.id) && <Link className="btn py-2 text-sm" href={`/app/cobro?cita=${a.id}`}>Cobrar</Link>}
-            {a.status === "reserved" && <button className="btn2" onClick={() => setStatus(a, "confirmed")}>Confirmar</button>}
-            {a.status !== "completed" && <button className="btn2" onClick={() => setStatus(a, "no_show")}>No asistió</button>}
-            {a.status !== "completed" && <button className="btn2" onClick={() => setStatus(a, "cancelled")}>Cancelar</button>}
+          {!["cancelled", "no_show"].includes(a.status) && <div className="mt-3 border-t border-black/5 pt-3">
+            <div className="flex flex-wrap gap-2">
+              {!paid.has(a.id) && a.status !== "completed" && <button className="btn py-2 text-sm" onClick={() => openAttend(a.id)}>Atendió</button>}
+              {a.status === "reserved" && <button className="btn2" onClick={() => setStatus(a, "confirmed")}>Confirmar</button>}
+              {a.status !== "completed" && !paid.has(a.id) && <button className="btn2" onClick={() => noShow(a)}>No asistió</button>}
+              {a.status !== "completed" && <button className="btn2" onClick={() => setStatus(a, "cancelled")}>Cancelar</button>}
+              {!paid.has(a.id) && <Link className="btn2" href={`/app/cobro?cita=${a.id}`}>Otro cobro</Link>}
+            </div>
+            {attendId === a.id && <AttendPanel items={(a.items ?? []).map((i: { name: string; price: number }) => ({ name: i.name, price: Number(i.price) }))} method={payMethod} adjustment={adj} tip={tip} busy={busy} error={err} onMethod={setPayMethod} onAdjustment={setAdj} onTip={setTip} onConfirm={() => attend(a)} onNoShow={() => noShow(a)} />}
           </div>}
         </li>
       ))}</ul>

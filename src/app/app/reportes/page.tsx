@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { sb } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
 import { formatMoney } from "@/lib/money";
@@ -29,6 +30,7 @@ export default function Reportes() {
   return (
     <main>
       <h1 className="h1">{role === "barber" ? "Mis servicios y comisiones" : "Reportes"}</h1>
+      {role !== "barber" && <Link href="/app/caja?tab=reportes" className="btn2 mb-3">Ingresos, gastos y cierre</Link>}
       <PeriodPicker kind={kind} setKind={setKind} anchor={anchor} setAnchor={setAnchor} tz={biz.timezone} />
       {role !== "barber" && <div className="card mb-3 font-mono text-sm">
         <div className="flex justify-between"><span>Ingresos por servicios (neto)</span><span>{formatMoney(tot.income, biz.currency)}</span></div>

@@ -24,11 +24,16 @@ export default function Cobro() {
     setMembers(m ?? []); setServices(s ?? []);
     const cita = new URLSearchParams(location.search).get("cita");
     if (cita) {
-      const { data: a } = await sb().from("appointments").select("*, client:clients(full_name), items:appointment_items(service_id)").eq("id", cita).single();
+      const { data: a } = await sb().from("appointments").select("*, client:clients(full_name), items:appointment_items(service_id, price, name)").eq("id", cita).single();
       if (a) { setAppt(a); setMember(a.member_id); setItems(a.items.map((i: any) => i.service_id).filter(Boolean)); }
     }
   })(); }, []);
-  const subtotal = items.reduce((s, id) => s + Number(services.find((x) => x.id === id)?.price ?? 0), 0);
+  const priceOf = (id: string) => {
+    const booked = appt?.items?.find((i: { service_id: string; price: number }) => i.service_id === id);
+    if (booked) return Number(booked.price);
+    return Number(services.find((x) => x.id === id)?.price ?? 0);
+  };
+  const subtotal = items.reduce((s, id) => s + priceOf(id), 0);
   const total = subtotal - toCents(discount) + toCents(tip);
   const paid = pays.reduce((s, p) => s + toCents(p.amount), 0);
   const single = pays.length === 1;
@@ -64,7 +69,7 @@ export default function Cobro() {
       {role !== "barber" && <select className="inp" value={member} onChange={(e) => setMember(e.target.value)}><option value="">¿Quién atendió?</option>{members.map((m) => <option key={m.id} value={m.id}>{m.display_name}</option>)}</select>}
       <div className="card space-y-2"><div className="font-display text-lg font-semibold">Servicios</div>
         <div className="flex flex-wrap gap-2">{services.map((s) => { const on = items.includes(s.id); return (
-          <button key={s.id} className={`chip ${on ? "chip-on" : "bg-card"}`} onClick={() => setItems(on ? items.filter((x) => x !== s.id) : [...items, s.id])}>{s.name} {formatMoney(s.price, biz.currency)}</button>); })}</div></div>
+          <button key={s.id} className={`chip ${on ? "chip-on" : "bg-card"}`} onClick={() => setItems(on ? items.filter((x) => x !== s.id) : [...items, s.id])}>{s.name} {formatMoney(priceOf(s.id), biz.currency)}</button>); })}</div></div>
       <div className="grid grid-cols-2 gap-2">
         <div><label className="lbl">Descuento</label><input className="inp" type="number" min={0} value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
         <div><label className="lbl">Propina</label><input className="inp" type="number" min={0} value={tip} onChange={(e) => setTip(e.target.value)} /></div>

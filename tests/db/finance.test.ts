@@ -149,3 +149,67 @@ describe("RLS libro: recepción solo ve la caja abierta", () => {
     expect((await asRole(s.owner)).length).toBeGreaterThan(r.length);
   });
 });
+
+describe("caja del día", () => {
+  it("atiende la cita al precio reservado, aunque el servicio haya cambiado", async () => {
+    await asUser(db, s.owner, () => rows(db, "update services set price = 99999 where id = $1", [s.corte]));
+    try {
+      const appt = (await asUser(db, s.recep, () => rows<{ id: string }>(db, "insert into appointments(business_id, client_id, member_id, starts_at, ends_at, status) values ($1,$2,$3, now(), now() + interval '30 minutes', 'confirmed') returning id", [s.bid, s.client, s.mA])))[0].id;
+      await asUser(db, s.recep, () => rows(db, "insert into appointment_items(business_id, appointment_id, service_id, name, price, duration_min) values ($1,$2,$3,'Corte',1200,30)", [s.bid, appt, s.corte]));
+      await expect(asUser(db, s.barberB, () => rows(db, "select attend_appointment($1,'cash',0,0)", [appt]))).rejects.toThrow(/forbidden/);
+      const saleId = (await asUser(db, s.barberA, () => rows<{ attend_appointment: string }>(db, "select attend_appointment($1,'transfer',-200,100) attend_appointment", [appt])))[0].attend_appointment;
+      const sale = (await rows<any>(db, "select subtotal::int, discount::int, tip::int, total::int, status from sales where id=$1", [saleId]))[0];
+      expect(sale).toMatchObject({ subtotal: 1200, discount: 200, tip: 100, total: 1100, status: "paid" });
+      const comm = (await rows<any>(db, "select amount::int a from commission_entries where sale_id=$1 and item_type='service'", [saleId]))[0];
+      expect(comm.a).toBe(500);
+      expect((await rows<any>(db, "select status from appointments where id=$1", [appt]))[0].status).toBe("completed");
+    } finally {
+      await asUser(db, s.owner, () => rows(db, "update services set price = 25000 where id = $1", [s.corte]));
+    }
+  });
+
+  it("no asistió no genera venta", async () => {
+    const appt = (await asUser(db, s.recep, () => rows<{ id: string }>(db, "insert into appointments(business_id, client_id, member_id, starts_at, ends_at, status) values ($1,$2,$3, now() + interval '2 hours', now() + interval '150 minutes', 'reserved') returning id", [s.bid, s.client, s.mB])))[0].id;
+    await asUser(db, s.barberB, () => rows(db, "select mark_no_show($1)", [appt]));
+    expect((await rows(db, "select 1 from sales where appointment_id=$1", [appt])).length).toBe(0);
+    expect((await rows<any>(db, "select status from appointments where id=$1", [appt]))[0].status).toBe("no_show");
+  });
+
+  it("un adelanto mayor a la comisión queda para la liquidación siguiente", async () => {
+    const m = (await asUser(db, s.owner, () => rows<{ id: string }>(db, "insert into memberships(business_id, display_name, role, is_bookable) values ($1,'Luis','barber',false) returning id", [s.bid])))[0].id;
+    const day = (await rows<{ d: string }>(db, "select (now() at time zone 'America/Bogota')::date::text d"))[0].d;
+    await asUser(db, s.owner, () => rows(db, "select register_advance($1,$2,1000,'cash','Adelanto de hoy')", [s.bid, m]));
+    const first = (await asUser(db, s.owner, () => rows<{ id: string }>(db, "select generate_payout($1,$2,$3::date,$3::date) id", [s.bid, m, day])))[0].id;
+    const p1 = (await rows<any>(db, "select total::int, carry_forward::int, commission_total::int from payouts where id=$1", [first]))[0];
+    expect(p1).toMatchObject({ total: 0, carry_forward: 1000, commission_total: 0 });
+    await asUser(db, s.owner, () => rows(db, "select approve_payout($1)", [first]));
+    await asUser(db, s.owner, () => rows(db, "select pay_payout($1,'cash')", [first]));
+    await asUser(db, s.owner, () => rows(db, "select pay_sale($1,null,null,$2,$3::jsonb,0,0,$4::jsonb)", [s.bid, m, JSON.stringify([{ item_type: "service", item_id: s.corte }]), JSON.stringify([{ method: "cash", amount: 25000 }])]));
+    const second = (await asUser(db, s.owner, () => rows<{ id: string }>(db, "select generate_payout($1,$2,$3::date,$3::date) id", [s.bid, m, day])))[0].id;
+    const p2 = (await rows<any>(db, "select total::int, carry_forward::int, commission_total::int, advances::int from payouts where id=$1", [second]))[0];
+    expect(p2.commission_total).toBe(12500);
+    expect(p2.advances).toBe(1000);
+    expect(p2.total).toBe(11500);
+    expect(p2.carry_forward).toBe(0);
+    const carryLine = (await rows<any>(db, "select description from payout_lines where payout_id=$1 and ref_id is null", [second]))[0];
+    expect(carryLine.description).toMatch(/quedó/i);
+  });
+
+  it("cerrar el día compara efectivo esperado contra lo contado y lo traba", async () => {
+    const day = (await rows<{ d: string }>(db, "select (now() at time zone 'America/Bogota')::date::text d"))[0].d;
+    const before = num((await asUser(db, s.owner, () => rows<any>(db, "select caja_dia($1,$2::date) j", [s.bid, day])))[0].j.expected_cash);
+    await asUser(db, s.recep, () => rows(db, "select record_expense_on($1,500,'transfer','Agua',$2::date)", [s.bid, day]));
+    const mid = (await asUser(db, s.owner, () => rows<any>(db, "select caja_dia($1,$2::date) j", [s.bid, day])))[0].j;
+    expect(num(mid.expected_cash)).toBe(before);
+    expect(num(mid.expenses)).toBeGreaterThanOrEqual(500);
+    const exp = num(mid.expected_cash);
+    await expect(asUser(db, s.recep, () => rows(db, "select close_cash_day($1,$2::date,$3,null)", [s.bid, day, exp - 100]))).rejects.toThrow(/note_required/);
+    const closed = (await asUser(db, s.recep, () => rows<any>(db, "select close_cash_day($1,$2::date,$3,'faltó un billete') j", [s.bid, day, exp - 100])))[0].j;
+    expect(num(closed.expected)).toBe(exp);
+    expect(num(closed.difference)).toBe(-100);
+    await expect(asUser(db, s.recep, () => rows(db, "select record_expense_on($1,100,'cash','Tarde',$2::date)", [s.bid, day]))).rejects.toThrow(/day_locked/);
+    await expect(asUser(db, s.owner, () => rows(db, "select register_advance($1,$2,100,'cash','tarde')", [s.bid, s.mB]))).rejects.toThrow(/day_locked/);
+  });
+});
+
+function num(v: unknown) { return Number(v); }

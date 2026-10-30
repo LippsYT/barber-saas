@@ -9,7 +9,11 @@ import { TabBar } from "@/components/app/TabBar";
 import { Chispa } from "@/components/brand/Mascot";
 import { Logo } from "@/components/brand/Logo";
 import { houseDavidsonPreview } from "@/lib/housePreview";
+import { useState } from "react";
 import { MessageCircle } from "lucide-react";
+import { AttendPanel } from "@/components/app/AttendPanel";
+import { CajaCierreView, CajaHoyView, CajaReportesView, SettleCard } from "@/components/app/caja/views";
+import { closeDrawer, periodReport, serviceBreakdown, settleAccounts } from "@/lib/caja";
 
 const preview = houseDavidsonPreview();
 const kevin = preview.barbers.find((b) => b.name.startsWith("Kevin"))!;
@@ -99,6 +103,84 @@ const citaFixture = {
   items: [{ name: "servicio oro", price: 1400 }],
 };
 
+function CajaShots({ vista }: { vista: string }) {
+  const [method, setMethod] = useState<"cash" | "transfer">("cash");
+  const [adj, setAdj] = useState("-2");
+  const [tip, setTip] = useState("1");
+  const [pay, setPay] = useState<"cash" | "transfer">("transfer");
+  const broken = serviceBreakdown([{ name: "Corte", unitPrice: 1200, qty: 10 }, { name: "Corte niño", unitPrice: 800, qty: 5 }]);
+  const drawer = closeDrawer([
+    { bucket: "sales", method: "cash", amount: 12000 },
+    { bucket: "tips", method: "cash", amount: 500 },
+    { bucket: "expenses", method: "cash", amount: -1400 },
+    { bucket: "advances", method: "cash", amount: -1000 },
+    { bucket: "sales", method: "transfer", amount: 4000 },
+  ], 10000);
+  const report = periodReport(
+    [
+      { id: "1", barberId: "k", barberName: "Kevin Álvarez", income: 12000, tip: 500, items: [{ name: "Corte", unitPrice: 1200, qty: 10, lineTotal: 12000 }], payments: [{ method: "cash", amount: 12500 }] },
+      { id: "2", barberId: "a", barberName: "Andrés Alava", income: 4000, tip: 0, items: [{ name: "Corte niño", unitPrice: 800, qty: 5, lineTotal: 4000 }], payments: [{ method: "transfer", amount: 4000 }] },
+    ],
+    [{ amount: 1400, method: "cash", concept: "Insumos" }],
+  );
+  const kevin = settleAccounts({ commissions: [{ id: "1", description: "3 × Corte", amount: 3600 }], advances: [{ id: "a", note: "Adelanto de hoy", amount: 1000 }], carriedIn: 0 });
+  const andres = settleAccounts({ commissions: [{ id: "2", description: "Corte", amount: 600 }], advances: [{ id: "b", note: "Adelanto de hoy", amount: 1000 }], carriedIn: 0 });
+  const by = report.byMethod;
+  if (vista === "cita-atendida") return (
+    <Frame tab="/app/agenda">
+      <div className="eyebrow">Viernes</div>
+      <h1 className="display mb-3 text-4xl">Agenda</h1>
+      <article className="card">
+        <div className="flex items-start gap-3">
+          <div className="w-14 shrink-0 font-display text-xl font-extrabold">10:30</div>
+          <div className="min-w-0">
+            <div className="font-semibold">Camila Soto</div>
+            <div className="text-sm">Corte <span className="text-ink/50">· US$ 12.00</span></div>
+            <div className="mt-1 text-xs text-ink/50">Kevin Álvarez</div>
+          </div>
+        </div>
+        <AttendPanel items={[{ name: "Corte", price: 1200 }]} method={method} adjustment={adj} tip={tip} onMethod={setMethod} onAdjustment={setAdj} onTip={setTip} onConfirm={() => {}} onNoShow={() => {}} />
+      </article>
+    </Frame>
+  );
+  if (vista === "caja-cierre") return (
+    <Frame tab="/app/caja">
+      <CajaCierreView dayLabel="Viernes 30 de octubre" lines={drawer.lines} expected={drawer.expected} counted="100.00" onCounted={() => {}} notes="Faltó el vuelto de un billete" onNotes={() => {}} difference={drawer.difference} locked={false} saved={null} onClose={() => {}} />
+    </Frame>
+  );
+  if (vista === "caja-reportes") return (
+    <Frame tab="/app/caja">
+      <CajaReportesView kind="day" onKind={() => {}} anchor="2026-10-30" onAnchor={() => {}} income={report.income} expenses={report.expenses} net={report.net} tips={report.tips} advances={1000} byMethod={by} services={report.byService} barbers={report.byBarber.map((b) => ({ ...b, commission: b.id === "k" ? 6000 : 2000 }))} />
+    </Frame>
+  );
+  if (vista === "caja-adelantos") return (
+    <Frame tab="/app/caja">
+      <div className="space-y-4">
+        <div>
+          <div className="eyebrow">Equipo</div>
+          <h1 className="display text-4xl">Adelantos.</h1>
+          <p className="mt-2 text-sm text-ink/60">Un adelanto es plata que ya le diste. En la liquidación se resta de lo que ganó.</p>
+        </div>
+        <SettleCard name="Kevin Álvarez" lines={kevin.lines} toPay={kevin.toPay} carryOut={kevin.carryOut} method={pay} onMethod={setPay} onPay={() => {}} canPay hint="Incluye lo que todavía no se liquidó, aunque sea de antes." />
+        <SettleCard name="Andrés Alava" lines={andres.lines} toPay={andres.toPay} carryOut={andres.carryOut} method={pay} onMethod={setPay} onPay={() => {}} canPay />
+      </div>
+    </Frame>
+  );
+  return (
+    <Frame tab="/app/caja">
+      <CajaHoyView
+        dayLabel="Viernes 30 de octubre" sentence={broken.sentence} income={17500} tips={1500} expenses={1400} net={16100}
+        services={broken.lines}
+        byMethod={{ cash: { in: 12500, out: 1400, net: 11100 }, transfer: { in: 5000, out: 0, net: 5000 }, card: { in: 0, out: 0, net: 0 }, other: { in: 0, out: 0, net: 0 } }}
+        expensesList={[{ id: "1", description: "Insumos", amount: 1400, method: "cash" }]}
+        locked={false}
+        expense={{ concept: "", amount: "", method: "cash", date: "2026-10-30" }}
+        onExpense={() => {}} onSaveExpense={() => {}} onPrev={() => {}} onNext={() => {}}
+      />
+    </Frame>
+  );
+}
+
 export function Screens({ vista }: { vista: string }) {
   if (vista === "cita-reservada" || vista === "cita-cancelada") {
     return <CitaPublic slug="house-davidson" token="preview" fixture={{ ...citaFixture, status: vista === "cita-cancelada" ? "cancelled" : "reserved" }} />;
@@ -135,25 +217,7 @@ export function Screens({ vista }: { vista: string }) {
       />
     </Frame>
   );
-  if (vista === "caja") return (
-    <Frame tab="/app/caja">
-      <div className="eyebrow">Caja</div>
-      <h1 className="display text-4xl">Al centavo.</h1>
-      <div className="mt-4 rounded-[1.7rem] bg-white p-5 shadow-soft">
-        <div className="text-xs font-extrabold uppercase tracking-widest text-ink/40">Saldo en caja</div>
-        <div className="display mt-1 text-5xl text-[#14944A]">US$ 186.00</div>
-        <div className="mt-2 text-sm text-ink/50">Fondo US$ 40.00 · abierta lun, 12 oct 2026 11:00 AM</div>
-        <div className="mt-3 font-extrabold text-[#2F5BFF]">Ver detalles</div>
-      </div>
-      <div className="card mt-3 space-y-1 font-mono text-sm">
-        <div className="flex justify-between"><span>Fondo inicial</span><span>US$ 40.00</span></div>
-        <div className="flex justify-between"><span>+ Ventas en efectivo</span><span>+ US$ 160.00</span></div>
-        <div className="flex justify-between"><span>− Gastos</span><span>− US$ 14.00</span></div>
-        <div className="flex justify-between border-t font-bold"><span>= Efectivo esperado</span><span>US$ 186.00</span></div>
-        <div className="pt-2 font-sans text-sm font-bold underline">Ver cálculo (línea por línea)</div>
-      </div>
-    </Frame>
-  );
+  if (vista === "caja" || vista === "caja-hoy" || vista === "caja-cierre" || vista === "caja-reportes" || vista === "caja-adelantos" || vista === "cita-atendida") return <CajaShots vista={vista} />;
   if (vista === "clientes") return (
     <Frame tab="/app/clientes">
       <div className="mb-3 flex items-end justify-between"><h1 className="display text-4xl">Clientes</h1><span className="pill bg-[#D6FF4A] text-ink">128</span></div>
