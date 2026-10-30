@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { toE164 } from "@/lib/phone";
 import Link from "next/link";
 import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
@@ -63,10 +64,10 @@ export default function Agenda() {
     e.preventDefault(); setErr("");
     const svc = services.find((s) => s.id === f.service); if (!svc || !f.member) return setErr("Elige barbero y servicio.");
     let clientId: string | null = null;
-    const phone = f.phone.replace(/\D/g, "");
+    const phone = toE164(f.phone);
     if (phone) { const { data } = await sb().from("clients").select("id").eq("business_id", biz.id).eq("phone", phone).maybeSingle(); clientId = data?.id ?? null; }
     if (!clientId && f.name.trim()) {
-      const { data, error } = await sb().from("clients").insert({ business_id: biz.id, full_name: f.name.trim(), phone: phone || null }).select("id").single();
+      const { data, error } = await sb().from("clients").insert({ business_id: biz.id, full_name: f.name.trim(), phone }).select("id").single();
       if (error) return setErr(errEs(error)); clientId = data.id;
     }
     const t0 = localToUtcMs(day, f.time, biz.timezone);

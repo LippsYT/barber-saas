@@ -27,7 +27,7 @@ begin
   bid := public.create_business('Barbería Demo', 'demo', 'Felipe (dueño)', 'America/Bogota', 'USD', true);
 
   insert into services (business_id, name, duration_min, price) values
-    (bid, 'Corte clásico', 30, 25000), (bid, 'Barba', 20, 15000), (bid, 'Corte + barba', 50, 35000);
+    (bid, 'Corte clásico', 30, 2500), (bid, 'Barba', 20, 1500), (bid, 'Corte + barba', 50, 3500);
   insert into memberships (business_id, user_id, display_name, role, booking_slug, is_bookable) values
     (bid, '22222222-2222-4222-8222-222222222222', 'Carlos', 'barber', 'carlos', true),
     (bid, '33333333-3333-4333-8333-333333333333', 'Andrés', 'barber', 'andres', true);

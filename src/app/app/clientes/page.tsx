@@ -4,11 +4,8 @@ import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
 import { formatMoney } from "@/lib/money";
 import { MessageCircle } from "lucide-react";
+import { toE164, waHref } from "@/lib/phone";
 
-function waHref(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  return digits ? `https://wa.me/${digits}` : "";
-}
 
 export default function Clientes() {
   const { biz } = useApp();
@@ -16,13 +13,13 @@ export default function Clientes() {
   const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [err, setErr] = useState("");
   const load = async () => {
     let r = sb().from("clients").select("*").eq("business_id", biz.id).order("full_name").limit(100);
-    if (q) r = r.or(`full_name.ilike.%${q.replace(/[%,()]/g, "")}%,phone.ilike.%${q.replace(/\D/g, "")}%`);
+    if (q) r = r.or(`full_name.ilike.%${q.replace(/[%,()]/g, "")}%,phone.ilike.%${q.replace(/\D/g, "").replace(/^0+/, "")}%`);
     const { data } = await r; setList(data ?? []);
   };
   useEffect(() => { load(); }, [q]);
   async function add(e: React.FormEvent) {
     e.preventDefault(); setErr("");
-    const { error } = await sb().from("clients").insert({ business_id: biz.id, full_name: name.trim(), phone: phone.replace(/\D/g, "") || null });
+    const { error } = await sb().from("clients").insert({ business_id: biz.id, full_name: name.trim(), phone: toE164(phone) });
     if (error) return setErr(error.message.includes("clients_phone_uniq") ? "Ya existe un cliente con ese teléfono." : errEs(error));
     setName(""); setPhone(""); load();
   }
