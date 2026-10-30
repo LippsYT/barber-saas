@@ -136,3 +136,16 @@ describe("liquidación (nómina)", () => {
     expect((await rows(db, "select 1 from payout_lines where payout_id=$1 and kind in ('commission','advance')", [again])).length).toBe(0);
   });
 });
+
+describe("RLS libro: recepción solo ve la caja abierta", () => {
+  it("recepción ve asientos de efectivo de la sesión abierta y nada de cajas cerradas; barbero nada", async () => {
+    const asRole = (uid: string) => asUser(db, uid, () => rows<any>(db, "select cash_session_id, account from ledger_entries"));
+    const open = (await rows<{ id: string }>(db, "select id from cash_sessions where status='open'"))[0]?.id;
+    await asUser(db, s.recep, () => rows(db, "select pay_sale($1,null,null,$2,$3::jsonb,0,0,$4::jsonb)", [s.bid, s.mB, JSON.stringify([{ item_type: "service", item_id: s.barba }]), JSON.stringify([{ method: "cash", amount: 15000 }])]));
+    const r = await asRole(s.recep);
+    expect(r.length).toBeGreaterThan(0);
+    expect(r.every((x: any) => x.cash_session_id === open && x.account === "cash")).toBe(true);
+    expect((await asRole(s.barberA)).length).toBe(0);
+    expect((await asRole(s.owner)).length).toBeGreaterThan(r.length);
+  });
+});

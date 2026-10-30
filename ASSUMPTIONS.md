@@ -1,0 +1,11 @@
+# Supuestos (defaults para puntos [WB-desconocido] del SPEC)
+- País/moneda por defecto: Colombia, COP, zona `America/Bogota`, montos enteros sin decimales.
+- Horario por defecto de cada barbero: lunes a sábado 09:00–19:00 (editable luego en BD; falta pantalla).
+- Comisiones por defecto: 50% de servicios (neto de descuento), 10% productos, 100% de propinas al barbero.
+- Recepcionista: sueldo fijo opcional en `member_compensation`; no ve el libro completo, solo los movimientos de efectivo de la caja abierta.
+- Una sola caja abierta por barbería; si se cobra sin abrir caja, se abre sola con fondo 0.
+- Diferencia de cierre ≠ 0 exige nota.
+- Reservas públicas: hasta 30 días adelante; cliente se identifica por teléfono; cancelación solo antes de la hora de la cita.
+- Recordatorios WhatsApp: solo se encolan (`notifications`), no se envían (no hay proveedor configurado).
+- Anular venta: solo dueño/admin, con motivo obligatorio.
+- Pagos: efectivo, tarjeta, transferencia; no hay pasarela de pago online.
