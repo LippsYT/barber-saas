@@ -8,7 +8,7 @@ export default function Cita({ params }: { params: Promise<{ slug: string; token
   const { slug, token } = use(params);
   const [b, setB] = useState<any>(null); const [msg, setMsg] = useState("");
   const load = () => sb().rpc("public_get_booking", { p_token: token }).then(({ data }) => setB(data ?? false));
-  const [links, setLinks] = useState<{ google?: string; wallet?: string | null } | null>(null);
+  const [links, setLinks] = useState<{ google?: string; wallet?: string | null; apple?: string | null } | null>(null);
   useEffect(() => { load(); fetch(`/api/cita/${token}/links`).then((r) => r.ok ? r.json() : null).then(setLinks).catch(() => {}); }, []);
   async function cancel() { if (!confirm("¿Cancelar tu cita?")) return; const { error } = await sb().rpc("public_cancel_booking", { p_token: token }); if (!error) fetch("/api/messages/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {}); setMsg(error ? errEs(error) : "Cita cancelada."); load(); }
   if (b === null) return <main className="grid min-h-screen place-items-center bg-ink text-cream"><div className="flex flex-col items-center gap-3"><Scissors className="h-7 w-7 animate-pulse text-gold" /><p className="font-display">Buscando tu cita…</p></div></main>;
@@ -39,6 +39,7 @@ export default function Cita({ params }: { params: Promise<{ slug: string; token
             <a className="btn2 text-center" href={`/api/cita/${token}/ics`} download="cita.ics">iPhone / .ics</a>
             {links.google && <a className="btn2 text-center" href={links.google} target="_blank" rel="noreferrer">Google Calendar</a>}
           </div>
+          {links.apple && <a className="btn2 text-center" href={links.apple}>Agregar a Apple Wallet</a>}
           {links.wallet && <a className="btn2 text-center" href={links.wallet} target="_blank" rel="noreferrer">Agregar a Google Wallet</a>}
         </div>}
         {["reserved", "confirmed"].includes(b.status) && <button className="btn2 w-full" onClick={cancel}>Cancelar cita</button>}
