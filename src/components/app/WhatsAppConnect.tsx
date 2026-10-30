@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
 
 type Stage = "form" | "code" | "done";
+/** Los códigos de WhatsApp caducan en pocos minutos; dejamos de sondear y pedimos uno nuevo. */
+const CODE_TTL_MS = 3 * 60 * 1000;
 
 export function WhatsAppConnect({
   onConnected, onSkip, preview,
@@ -18,22 +20,26 @@ export function WhatsAppConnect({
   const [demo, setDemo] = useState(preview?.demo ?? false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [linkState, setLinkState] = useState<string>("");
+  const [issuedAt, setIssuedAt] = useState<number>(0);
+  const [now, setNow] = useState<number>(Date.now());
 
   async function call(body: Record<string, string>) {
     const res = await fetch("/api/whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "No se pudo conectar.");
-    return data as { status?: string; pairingCode?: string; demo?: boolean };
+    return data as { status?: string; pairingCode?: string; demo?: boolean; state?: string };
   }
 
-  async function start(e: React.FormEvent) {
-    e.preventDefault();
+  async function start(e?: React.FormEvent) {
+    e?.preventDefault();
     if (preview) return;
     setBusy(true); setErr("");
     try {
       const data = await call({ action: "start", phone });
       setCode(data.pairingCode ?? "");
       setDemo(Boolean(data.demo));
+      setLinkState("connecting"); setIssuedAt(Date.now());
       setStage("code");
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   }
@@ -43,6 +49,8 @@ export function WhatsAppConnect({
     try {
       const data = await call({ action: "status" });
       if (data.demo) setDemo(true);
+      if (data.state) setLinkState(data.state);
+      // Solo avanzamos cuando Evolution reporta state "open" (status connected).
       if (data.status === "connected") { setStage("done"); onConnected?.(); }
     } catch { /* el siguiente sondeo reintenta */ }
   }
@@ -59,9 +67,9 @@ export function WhatsAppConnect({
 
   useEffect(() => {
     if (preview || stage !== "code" || demo) return;
-    const t = setInterval(refresh, 4000);
+    const t = setInterval(() => { setNow(Date.now()); if (Date.now() - issuedAt < CODE_TTL_MS) refresh(); }, 4000);
     return () => clearInterval(t);
-  }, [stage, demo, preview]);
+  }, [stage, demo, preview, issuedAt]);
 
   if (stage === "done" || preview?.stage === "done") {
     return (
@@ -91,9 +99,20 @@ export function WhatsAppConnect({
             <b>Modo demo.</b> No hay <span className="font-mono">EVOLUTION_API_URL</span>. Este código no vincula un WhatsApp real.
           </div>
         )}
+        {!demo && !preview && (() => {
+          const expired = issuedAt > 0 && now - issuedAt >= CODE_TTL_MS;
+          return (
+            <div role="status" aria-live="polite" className="rounded-2xl bg-white p-3 text-sm text-ink shadow-soft">
+              {expired ? <><b>El código caducó.</b> Pide uno nuevo y escríbelo enseguida.</>
+                : linkState === "unreachable" ? <><b>No pudimos consultar Evolution.</b> Reintentamos solos cada 4 s.</>
+                : <><b>Esperando a WhatsApp…</b> Estado: {linkState || "connecting"}. Pasamos a “¡Listo!” solo cuando WhatsApp confirme la conexión.</>}
+              <button className="mt-2 block font-semibold text-[#1D3FD6] underline" disabled={busy} onClick={() => start()}>{busy ? "Pidiendo…" : "Pedir código nuevo"}</button>
+            </div>
+          );
+        })()}
+        {err && <p role="alert" className="rounded-2xl bg-[#FFE1E7] p-3 text-sm text-[#7A0F24]">{err}</p>}
         {demo ? <button className="btn w-full" disabled={busy} onClick={confirmDemo}>Ya introduje el código</button> : <button className="btn2 w-full" onClick={refresh}>Ya lo vinculé, revisar</button>}
         {onSkip && <button className="w-full text-sm font-semibold underline-offset-2 opacity-80 hover:underline" onClick={onSkip}>Ahora no</button>}
-        {err && <p className="text-sm text-red-600">{err}</p>}
       </div>
     );
   }

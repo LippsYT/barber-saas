@@ -30,17 +30,19 @@ export async function POST(req: Request) {
   if (body.action === "status") {
     const { data: link } = await sb.from("whatsapp_links").select("*").eq("business_id", biz.id).maybeSingle();
     if (!link) return NextResponse.json({ status: "disconnected", demo: provider.demo, provider: provider.id });
+    let linkState: string | undefined;
     if (!link.demo && link.status === "pairing") {
       try {
         const state = await provider.connectionState(link.instance_name);
+        linkState = state;
         if (state === "open") {
           await sb.from("whatsapp_links").update({ status: "connected", updated_at: new Date().toISOString() }).eq("business_id", biz.id);
           return NextResponse.json({ status: "connected", demo: false, provider: "evolution", phone: link.phone });
         }
-      } catch { /* se reintenta en el siguiente sondeo */ }
+      } catch { linkState = "unreachable"; }
     }
     return NextResponse.json({
-      status: link.status, demo: link.demo, provider: link.provider, phone: link.phone, pairingCode: link.status === "pairing" ? link.pairing_code : undefined,
+      status: link.status, demo: link.demo, provider: link.provider, phone: link.phone, pairingCode: link.status === "pairing" ? link.pairing_code : undefined, state: linkState,
     });
   }
 
