@@ -10,6 +10,8 @@ export interface WhatsAppProvider {
   connectionState(instanceName: string): Promise<LinkState>;
   /** Envía texto. number = solo dígitos con código de país. */
   sendText(instanceName: string, number: string, text: string): Promise<SendResult>;
+  /** Imagen (PNG base64, sin prefijo data:) con texto como caption. */
+  sendMedia?(instanceName: string, number: string, pngBase64: string, caption: string): Promise<SendResult>;
 }
 
 export interface SendResult { id: string; status?: string }

@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { getWhatsAppProvider } from "@/lib/whatsapp";
 import { sendPolicy } from "./allowlist";
 import { emailPolicy, getEmailProvider } from "./email";
+import { appBaseUrl } from "./templates";
+import { renderCardPng } from "@/lib/ogCard";
 import { processQueue, type ClaimedMessage, type QueueRpc } from "./sender";
 
 /** RPC de cola con el cliente anon + CRON_SECRET (validado en SQL contra vault). */
@@ -29,6 +31,6 @@ function fallbackInstance() {
 }
 
 export function runQueue(opts: { limit?: number; appointmentId?: string; id?: string } = {}) {
-  return processQueue(queueRpc(), getWhatsAppProvider(), sendPolicy(), { ...opts, fallbackInstance: fallbackInstance() },
+  return processQueue(queueRpc(), getWhatsAppProvider(), sendPolicy(), { ...opts, fallbackInstance: fallbackInstance(), baseUrl: appBaseUrl(), card: renderCardPng },
     { provider: getEmailProvider(), policy: emailPolicy() });
 }

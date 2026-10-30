@@ -28,7 +28,7 @@ export function ReactivationSettings() {
       <label className="block text-sm">Días desde el último corte
         <input className="inp mt-1" type="number" inputMode="numeric" min={7} max={365} value={days} onChange={(e) => setDays(Number(e.target.value))} />
       </label>
-      <p className="rounded-lg bg-black/5 p-3 text-sm text-ink/70">{reactivationText("Juan", days, biz.name ?? "tu barbería", "…/" + (biz.slug ?? ""))}</p>
+      <p className="whitespace-pre-line rounded-lg bg-black/5 p-3 text-sm text-ink/70">{reactivationText("Juan", days, biz.name ?? "tu barbería", "…/" + (biz.slug ?? ""))}</p>
       <button className="btn" onClick={save}>Guardar</button>
       {msg && <p className="text-sm" role="status">{msg}</p>}
     </section>

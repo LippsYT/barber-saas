@@ -46,12 +46,13 @@ describe("cola de mensajes", () => {
     const c = m.find((x) => x.kind === "cancellation")!;
     expect(c.status).toBe("pending");
     expect(c.body).toContain("fue cancelada");
-    expect(c.body).toContain("https://pulso.test/barberia-test");
+    expect(c.body).toContain("{{BASE}}/barberia-test");
+    expect(c.body).toMatch(/^❌ \*Cita cancelada\*/);
   });
   it("reactivación: botón manual (dueño) y job diario respeta toggle/días/futuras/duplicados", async () => {
     const [id] = await asUser(db, s.owner, () => rows<{ enqueue_reactivation_now: string }>(db, "select enqueue_reactivation_now($1)", [s.client]));
     const [b] = await rows<{ body: string }>(db, "select payload->>'body' body from scheduled_messages where id=$1", [id.enqueue_reactivation_now]);
-    expect(b.body).toMatch(/^Hola Carlos, ya pasaron \d+ días desde tu último corte en Barbería Test\. ¿Agendamos el próximo\? Reservá acá: https:\/\/pulso\.test\/barberia-test$/);
+    expect(b.body).toMatch(/^💈 \*Barbería Test\*\n\nHola Carlos, ya pasaron \d+ días desde tu último corte\. ¿Agendamos el próximo\?\n\nReserva aquí: \{\{BASE\}\}\/barberia-test$/);
     await expect(asUser(db, s.stranger, () => rows(db, "select enqueue_reactivation_now($1)", [s.client]))).rejects.toThrow(/forbidden/);
     await db.exec(`delete from scheduled_messages where kind='reactivation'; delete from appointments where client_id='${s.client}';`);
     await db.exec(`insert into appointments(business_id, client_id, member_id, starts_at, ends_at, source, status) values ('${s.bid}','${s.client}','${s.mA}', now() - interval '30 days', now() - interval '30 days' + interval '30 minutes', 'admin', 'completed')`);
@@ -62,5 +63,23 @@ describe("cola de mensajes", () => {
     await db.exec(`delete from scheduled_messages where kind='reactivation'`);
     await asUser(db, s.owner, () => rows(db, "select set_reactivation_settings(true, 40)"));
     expect((await rows<{ n: number }>(db, "select enqueue_reactivations() n"))[0].n).toBe(0); // 30 < 40 días
+  });
+  it("0019: token corto único, recordatorios con formato y link /c/", async () => {
+    const [a] = await asUser(db, s.owner, () => rows<{ id: string; short_token: string }>(db,
+      "insert into appointments(business_id, client_id, member_id, starts_at, ends_at, source) values ($1,$2,$3, '2030-11-02 15:10:00+00', '2030-11-02 15:40:00+00', 'admin') returning id, short_token", [s.bid, s.client, s.mA]));
+    expect(a.short_token).toMatch(/^[A-Za-z0-9]{9}$/);
+    await rows(db, "select schedule_reminders($1)", [a.id]);
+    const m = await rows<{ body: string }>(db, "select payload->>'body' body from scheduled_messages where appointment_id=$1 and kind='reminder' order by send_at", [a.id]);
+    expect(m).toHaveLength(2);
+    expect(m[0].body).toMatch(/mañana tienes cita/);
+    expect(m[1].body).toMatch(/en 2 horas/);
+    expect(m[0].body).toContain(`Ver o cancelar tu cita: {{BASE}}/c/${a.short_token}`);
+    const [l] = await rows<{ j: { manage_token: string } }>(db, "select public_short_lookup($1) j", [a.short_token]);
+    expect(l.j.manage_token).toBeTruthy();
+    const [f] = await rows<{ f: string }>(db, "select _fecha_es('2026-10-31 15:10:00+00', 'America/Guayaquil') f");
+    expect(f.f).toBe("Sábado 31 de octubre, 10:10 a. m.");
+    const [f2] = await rows<{ f: string }>(db, "select _fecha_es('2026-10-31 17:05:00+00', 'America/Guayaquil') f");
+    expect(f2.f).toBe("Sábado 31 de octubre, 12:05 p. m.");
+    expect((await rows<{ u: string }>(db, "select _usd(1200) u"))[0].u).toBe("US$ 12,00");
   });
 });

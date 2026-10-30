@@ -5,7 +5,7 @@ import { processQueue, type ClaimedMessage, type QueueRpc } from "./sender";
 import { createMockProvider } from "@/lib/whatsapp/mock";
 import { createEvolutionProvider, parseSendResult } from "@/lib/whatsapp/evolution";
 import { createMockEmailProvider } from "./email";
-import { cancellationText, confirmationText, reactivationSettings, reactivationText, reminderText } from "./templates";
+import { appBaseUrl, cancellationText, citaText, fechaEs, plainText, reactivationSettings, reactivationText, withBase } from "./templates";
 import { buildIcs, googleCalendarUrl } from "@/lib/calendar";
 import { walletPayload, signWalletJwt, saveToWalletUrl } from "@/lib/gwallet";
 
@@ -82,13 +82,32 @@ describe("evolution sendText", () => {
 });
 
 describe("plantillas", () => {
-  it("reactivación con el texto pedido", () => {
-    expect(reactivationText("Felippe", 25, "Lumos", "https://x/lumos")).toBe("Hola Felippe, ya pasaron 25 días desde tu último corte en Lumos. ¿Agendamos el próximo? Reservá acá: https://x/lumos");
+  it("reactivación con formato", () => {
+    expect(reactivationText("Felippe Barreto", 25, "Lumos", "https://x/lumos")).toBe("💈 *Lumos*\n\nHola Felippe, ya pasaron 25 días desde tu último corte. ¿Agendamos el próximo?\n\nReserva aquí: https://x/lumos");
   });
-  it("otras", () => {
-    expect(cancellationText("A", "B", "31/10 a las 10:10", "L")).toContain("fue cancelada");
-    expect(confirmationText("A", "B", "C", "D", "/x")).toMatch(/^¡Listo A!/);
-    expect(reminderText("A", "B", "D")).toContain("te recordamos");
+  it("fecha legible y textos de cita", () => {
+    expect(fechaEs("2026-10-31T15:10:00Z", "America/Guayaquil")).toBe("Sábado 31 de octubre, 10:10 a. m.");
+    expect(fechaEs("2026-11-01T00:30:00Z", "America/Guayaquil")).toBe("Sábado 31 de octubre, 7:30 p. m.");
+    const c = { name: "Ana Pérez", business: "B", barber: "C", startsAt: "2026-10-31T15:10:00Z", timezone: "America/Guayaquil", services: "Corte", total: 1000, address: "Calle 1", shortToken: "abc123XYZ" };
+    expect(citaText("confirmation", c)).toBe("✅ *¡Cita confirmada, Ana!*\n\n💈 *B*\n📅 Sábado 31 de octubre, 10:10 a. m.\n✂️ Corte · US$ 10,00\n👤 Con C\n📍 Calle 1\n\nVer o cancelar tu cita: {{BASE}}/c/abc123XYZ");
+    expect(cancellationText("A", "B", c.startsAt, c.timezone, "b")).toContain("fue cancelada");
+    expect(withBase("x {{BASE}}/c/1", "https://h")).toBe("x https://h/c/1");
+    expect(plainText("*hola* x")).toBe("hola x");
+    expect(appBaseUrl({ VERCEL_ENV: "preview", VERCEL_BRANCH_URL: "a.vercel.app" })).toBe("https://a.vercel.app");
+    expect(appBaseUrl({ APP_BASE_URL: "https://z.com/" })).toBe("https://z.com");
+  });
+  it("sender: reemplaza {{BASE}} y manda tarjeta como imagen en la confirmación", async () => {
+    const sent: { kind: string; caption?: string; text?: string }[] = [];
+    const p = { ...createMockProvider(), demo: false,
+      async sendText(_i: string, _n: string, text: string) { sent.push({ kind: "text", text }); return { id: "T" }; },
+      async sendMedia(_i: string, _n: string, _png: string, caption: string) { sent.push({ kind: "media", caption }); return { id: "M" }; } };
+    const msgs: ClaimedMessage[] = [
+      { id: "1", business_id: "b", kind: "confirmation", to_phone: "+5491157604074", body: "ok {{BASE}}/c/xyz", attempts: 1, instance_name: "i", short_token: "xyz", media: "og" },
+      { id: "2", business_id: "b", kind: "reminder", to_phone: "+5491157604074", body: "r {{BASE}}/c/xyz", attempts: 1, instance_name: "i", short_token: "xyz" },
+    ];
+    const rpc: QueueRpc = { async claim() { return msgs; }, async finish() { return "sent"; } };
+    await processQueue(rpc, p, sendPolicyFor("+5491157604074", {}), { baseUrl: "https://h", card: async () => "UE5H" });
+    expect(sent).toEqual([{ kind: "media", caption: "ok https://h/c/xyz" }, { kind: "text", text: "r https://h/c/xyz" }]);
   });
   it("ajustes: default OFF y 25 días", () => {
     expect(reactivationSettings(null)).toEqual({ enabled: false, days: 25 });

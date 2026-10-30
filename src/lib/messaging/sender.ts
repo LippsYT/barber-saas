@@ -1,10 +1,11 @@
 import type { WhatsAppProvider } from "@/lib/whatsapp/types";
 import { allowedToSend, digits, type SendPolicy } from "./allowlist";
 import { emailSubject, type EmailProvider } from "./email";
+import { plainText, withBase } from "./templates";
 
 export interface ClaimedMessage {
   id: string; business_id: string; kind: string; to_phone: string | null; body: string | null; attempts: number; instance_name: string | null;
-  to_email?: string | null; appointment_id?: string | null;
+  to_email?: string | null; appointment_id?: string | null; short_token?: string | null; media?: string | null;
 }
 export interface QueueRpc {
   claim(opts: { limit: number; appointmentId?: string; id?: string; fallbackInstance?: string }): Promise<ClaimedMessage[]>;
@@ -15,8 +16,9 @@ export interface EmailDeps { provider: EmailProvider; policy: SendPolicy; busine
 
 /** Toma mensajes vencidos y los envía. Nunca envía a un número fuera de la política. */
 export async function processQueue(rpc: QueueRpc, provider: WhatsAppProvider, policy: SendPolicy,
-  opts: { limit?: number; appointmentId?: string; id?: string; fallbackInstance?: string } = {}, email?: EmailDeps): Promise<SendOutcome[]> {
-  const rows = await rpc.claim({ limit: opts.limit ?? 20, appointmentId: opts.appointmentId, id: opts.id, fallbackInstance: opts.fallbackInstance });
+  opts: { limit?: number; appointmentId?: string; id?: string; fallbackInstance?: string; baseUrl?: string; card?: (shortToken: string) => Promise<string | undefined> } = {}, email?: EmailDeps): Promise<SendOutcome[]> {
+  const base = opts.baseUrl ?? "";
+  const rows = (await rpc.claim({ limit: opts.limit ?? 20, appointmentId: opts.appointmentId, id: opts.id, fallbackInstance: opts.fallbackInstance })).map((m) => ({ ...m, body: m.body == null ? m.body : withBase(m.body, base) }));
   const out: SendOutcome[] = [];
   const emails = new Map<string, string | undefined>();
   for (const m of rows) {
@@ -29,7 +31,13 @@ export async function processQueue(rpc: QueueRpc, provider: WhatsAppProvider, po
     if (!m.instance_name) { out.push({ id: m.id, kind: m.kind, result: await rpc.finish(m.id, "failed", undefined, "no_connected_instance"), error: "no_connected_instance" }); continue; }
     if (provider.demo) { out.push({ id: m.id, kind: m.kind, result: await rpc.finish(m.id, "skipped", undefined, "demo_provider") }); continue; }
     try {
-      const r = await provider.sendText(m.instance_name, digits(m.to_phone), m.body);
+      let r: { id: string; status?: string } | undefined;
+      if (m.media === "og" && m.short_token && provider.sendMedia && opts.card) {
+        // Tarjeta como imagen + texto como caption; si falla la imagen, cae a texto.
+        const png = await opts.card(m.short_token).catch(() => undefined);
+        if (png) r = await provider.sendMedia(m.instance_name, digits(m.to_phone), png, m.body);
+      }
+      r ??= await provider.sendText(m.instance_name, digits(m.to_phone), m.body);
       out.push({ id: m.id, kind: m.kind, result: await rpc.finish(m.id, "sent", r.id), providerId: r.id, providerStatus: r.status });
     } catch (e) {
       const err = ((e as Error).message ?? "send_error").slice(0, 300);
@@ -46,7 +54,7 @@ async function sendEmail(m: ClaimedMessage, d: EmailDeps): Promise<string | unde
   if (!allowedToSend(m.to_email, d.policy)) return "skipped";
   try {
     const ics = m.kind === "confirmation" && d.ics ? await d.ics(m) : undefined;
-    const r = await d.provider.send({ to: m.to_email, subject: emailSubject(m.kind, d.business?.(m.business_id) ?? "la barbería"), text: m.body, ics });
+    const r = await d.provider.send({ to: m.to_email, subject: emailSubject(m.kind, d.business?.(m.business_id) ?? "la barbería"), text: plainText(m.body), ics });
     return `sent:${r.id}`;
   } catch (e) { return `failed:${((e as Error).message ?? "").slice(0, 120)}`; }
 }

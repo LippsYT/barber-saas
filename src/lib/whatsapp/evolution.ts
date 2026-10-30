@@ -62,6 +62,13 @@ export function createEvolutionProvider(cfg: EvolutionConfig): WhatsAppProvider 
       });
       return parseSendResult(body);
     },
+    async sendMedia(instanceName, number, pngBase64, caption): Promise<SendResult> {
+      const body = await call(`/message/sendMedia/${encodeURIComponent(instanceName)}`, {
+        method: "POST",
+        body: JSON.stringify({ number, mediatype: "image", mimetype: "image/png", media: pngBase64, fileName: "cita.png", caption }),
+      });
+      return parseSendResult(body);
+    },
   };
 }
 
