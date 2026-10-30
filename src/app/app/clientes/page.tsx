@@ -54,7 +54,7 @@ export default function Clientes() {
         <button className="btn">Agregar</button>
       </form>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <ul className="space-y-2">{list.map((c) => <li key={c.id}><button className="card w-full text-left" onClick={() => open(c)}><div className="font-medium">{c.full_name}</div><div className="text-sm text-gray-500">{c.phone}</div></button></li>)}</ul>
+      <ul className="space-y-2">{list.map((c) => <li key={c.id}><button className="card w-full text-left" onClick={() => open(c)}><div className="font-display text-lg font-semibold">{c.full_name}</div><div className="text-sm text-muted-foreground">{c.phone}</div></button></li>)}</ul>
     </main>
   );
 }

@@ -5,10 +5,13 @@ import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
 import { addDays, localDate, localTime, localToUtcMs } from "@/lib/time";
 import { formatMoney } from "@/lib/money";
+import { CalendarX2, Plus, Globe2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Empty } from "@/components/ui/empty";
+import { Avatar } from "@/components/ui/avatar";
 
 const ST: Record<string, [string, string]> = {
-  reserved: ["Reservada", "bg-blue-100"], confirmed: ["Confirmada", "bg-blue-200"], in_progress: ["En curso", "bg-yellow-100"],
-  completed: ["Completada", "bg-green-100"], no_show: ["No asistió", "bg-gray-200"], cancelled: ["Cancelada", "bg-red-100"],
+  reserved: ["Reservada", "bg-sky-100 text-sky-900 border-l-sky-400"], confirmed: ["Confirmada", "bg-indigo-100 text-indigo-900 border-l-indigo-400"], in_progress: ["En curso", "bg-gold/20 text-gold-700 border-l-gold"],
+  completed: ["Completada", "bg-emerald-100 text-emerald-900 border-l-emerald-500"], no_show: ["No asistió", "bg-stone-200 text-stone-700 border-l-stone-400"], cancelled: ["Cancelada", "bg-red-100 text-red-800 border-l-red-400"],
 };
 
 export default function Agenda() {
@@ -60,18 +63,30 @@ export default function Agenda() {
     if (error) alert(errEs(error)); load();
   }
   const shown = appts.filter((a) => !filter || a.member_id === filter);
+  const live = shown.filter((a) => !["cancelled", "no_show"].includes(a.status));
+  const expected = live.reduce((t, a) => t + a.items.reduce((x: number, it: any) => x + Number(it.price), 0), 0);
+  const isToday = day === localDate(Date.now(), biz.timezone);
+  const dayLabel = new Date(day + "T12:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
   return (
     <main>
-      <div className="mb-3 flex items-center gap-2">
-        <button className="btn2" onClick={() => setDay(addDays(day, -1))}>‹</button>
-        <input type="date" className="inp" value={day} onChange={(e) => setDay(e.target.value)} />
-        <button className="btn2" onClick={() => setDay(addDays(day, 1))}>›</button>
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div><div className="eyebrow">{isToday ? "Hoy" : "Agenda"}</div><h1 className="font-display text-3xl font-semibold capitalize">{dayLabel}</h1></div>
+        <div className="flex items-center gap-1">
+          <button aria-label="Día anterior" className="btn2 h-10 w-10 p-0" onClick={() => setDay(addDays(day, -1))}><span className="sr-only">‹</span><ChevronLeft className="h-4 w-4" /></button>
+          <button className="btn2 h-10 w-10 p-0" onClick={() => setDay(addDays(day, 1))}>›</button>
+        </div>
       </div>
-      {role !== "barber" && <div className="mb-3 flex gap-2 overflow-x-auto">
-        <button className={`chip ${!filter ? "chip-on" : "bg-white"}`} onClick={() => setFilter("")}>Todos</button>
-        {members.map((m) => <button key={m.id} className={`chip whitespace-nowrap ${filter === m.id ? "chip-on" : "bg-white"}`} onClick={() => setFilter(m.id)}>{m.display_name}</button>)}
+      <div className="mb-5 grid grid-cols-3 gap-3">
+        <div className="card"><div className="text-xs text-muted-foreground">Citas</div><div className="stat">{live.length}</div></div>
+        <div className="card"><div className="text-xs text-muted-foreground">Cobradas</div><div className="stat">{shown.filter((a) => paid.has(a.id)).length}</div></div>
+        <div className="card bg-ink text-cream"><div className="text-xs text-cream/60">Ingreso esperado</div><div className="stat truncate text-2xl text-gold-300 md:text-3xl">{formatMoney(expected, biz.currency)}</div></div>
+      </div>
+      <div className="mb-4 flex items-center gap-2"><input type="date" className="inp py-2" value={day} onChange={(e) => setDay(e.target.value)} /></div>
+      {role !== "barber" && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <button className={`chip ${!filter ? "chip-on" : "bg-card"}`} onClick={() => setFilter("")}>Todos</button>
+        {members.map((m) => <button key={m.id} className={`chip whitespace-nowrap ${filter === m.id ? "chip-on" : "bg-card"}`} onClick={() => setFilter(m.id)}>{m.display_name}</button>)}
       </div>}
-      <button className="btn mb-3 w-full" onClick={() => setForm(!form)}>{form ? "Cerrar" : "+ Nueva cita"}</button>
+      <button className="btn-gold mb-4 w-full" onClick={() => setForm(!form)}>{form ? "Cerrar" : <><Plus className="h-4 w-4" />Nueva cita</>}</button>
       {form && <form onSubmit={create} className="card mb-4 space-y-2">
         {role !== "barber" && <select className="inp" required value={f.member} onChange={(e) => setF({ ...f, member: e.target.value })}><option value="">Barbero…</option>{members.map((m) => <option key={m.id} value={m.id}>{m.display_name}</option>)}</select>}
         <select className="inp" required value={f.service} onChange={(e) => setF({ ...f, service: e.target.value })}><option value="">Servicio…</option>{services.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.duration_min} min · {formatMoney(s.price, biz.currency)}</option>)}</select>
@@ -81,20 +96,27 @@ export default function Agenda() {
         <button className="btn w-full">Guardar cita</button>
         {err && <p className="text-sm text-red-600">{err}</p>}
       </form>}
-      <ul className="space-y-2">{shown.map((a) => (
-        <li key={a.id} className={`card ${ST[a.status][1]}`}>
-          <div className="flex justify-between"><b>{localTime(Date.parse(a.starts_at), biz.timezone)}–{localTime(Date.parse(a.ends_at), biz.timezone)}</b><span className="text-xs">{ST[a.status][0]}{paid.has(a.id) && " · Pagada"}</span></div>
-          <div>{a.client?.full_name ?? "Sin cliente"} · {a.items.map((i: any) => i.name).join(", ")}</div>
-          <div className="text-sm text-gray-600">{a.member?.display_name}{a.source === "booking_link" && " · reservó online"}</div>
-          {!["cancelled", "no_show"].includes(a.status) && <div className="mt-2 flex flex-wrap gap-2">
-            {!paid.has(a.id) && <Link className="btn2 bg-black text-white" href={`/app/cobro?cita=${a.id}`}>Cobrar</Link>}
+      <ul className="space-y-3">{shown.map((a) => (
+        <li key={a.id} className={`card border-l-4 ${ST[a.status][1].split(" ").find((c) => c.startsWith("border-l-"))} ${["cancelled", "no_show"].includes(a.status) ? "opacity-60" : ""}`}>
+          <div className="flex items-start gap-3">
+            <div className="w-14 shrink-0"><div className="font-display text-xl font-semibold tabular-nums">{localTime(Date.parse(a.starts_at), biz.timezone)}</div><div className="text-xs text-muted-foreground">{localTime(Date.parse(a.ends_at), biz.timezone)}</div></div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{a.client?.full_name ?? "Sin cliente"}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${ST[a.status][1].split(" ").filter((c) => !c.startsWith("border-l-")).join(" ")}`}>{ST[a.status][0]}</span>
+                {paid.has(a.id) && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-medium text-white">Pagada</span>}</div>
+              <div className="text-sm">{a.items.map((i: any) => i.name).join(", ")}</div>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><Avatar name={a.member?.display_name ?? "?"} size={20} className="ring-1" />{a.member?.display_name}{a.source === "booking_link" && <span className="inline-flex items-center gap-1"><Globe2 className="h-3 w-3" />reservó online</span>}</div>
+            </div>
+          </div>
+          {!["cancelled", "no_show"].includes(a.status) && <div className="mt-3 flex flex-wrap gap-2 border-t border-border/60 pt-3">
+            {!paid.has(a.id) && <Link className="btn py-2 text-sm" href={`/app/cobro?cita=${a.id}`}>Cobrar</Link>}
             {a.status === "reserved" && <button className="btn2" onClick={() => setStatus(a, "confirmed")}>Confirmar</button>}
             {a.status !== "completed" && <button className="btn2" onClick={() => setStatus(a, "no_show")}>No asistió</button>}
             {a.status !== "completed" && <button className="btn2" onClick={() => setStatus(a, "cancelled")}>Cancelar</button>}
           </div>}
         </li>))}
-        {!shown.length && <p className="text-center text-gray-500">No hay citas este día.</p>}
       </ul>
+      {!shown.length && <Empty icon={CalendarX2} title="No hay citas este día." text="Comparte tu link de reservas o agrega una cita manualmente." />}
     </main>
   );
 }

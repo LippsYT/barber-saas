@@ -33,7 +33,7 @@ export default function Equipo() {
       <h1 className="h1">Equipo</h1>
       <div className="card mb-4 text-sm">Link de reservas del negocio:<br /><a className="underline break-all" href={`/b/${biz.slug}`}>{origin}/b/{biz.slug}</a></div>
       <form onSubmit={add} className="card mb-4 space-y-2">
-        <div className="font-medium">Agregar persona</div>
+        <div className="font-display text-lg font-semibold">Agregar persona</div>
         <input className="inp" required placeholder="Nombre (ej. Juan)" value={name} onChange={(e) => setName(e.target.value)} />
         <input className="inp" type="email" placeholder="Correo para que tenga su usuario (opcional)" value={email} onChange={(e) => setEmail(e.target.value)} />
         <select className="inp" value={role} onChange={(e) => setRole(e.target.value)}>{ROLES.filter((r) => myRole === "owner" || r[0] !== "admin").map((r) => <option key={r[0]} value={r[0]}>{r[1]}</option>)}</select>
@@ -45,7 +45,7 @@ export default function Equipo() {
         <li key={m.id} className="card">
           <div className="flex items-center justify-between">
             <div><div className={m.active ? "font-medium" : "line-through text-gray-400"}>{m.display_name}</div>
-              <div className="text-xs text-gray-500">{ROLE_ES[m.role]} · {m.user_id ? "con usuario" : m.invited_email ? `invitado: ${m.invited_email}` : "sin usuario"}
+              <div className="text-xs text-muted-foreground">{ROLE_ES[m.role]} · {m.user_id ? "con usuario" : m.invited_email ? `invitado: ${m.invited_email}` : "sin usuario"}
                 {comp[m.id] && ` · ${comp[m.id].pay_type === "commission" ? "comisión" : comp[m.id].pay_type === "fixed" ? "sueldo " + formatMoney(comp[m.id].fixed_salary, biz.currency) : "mixto"}`}</div></div>
             {m.role !== "owner" && m.active && <button className="btn2" onClick={() => deactivate(m)}>Desactivar</button>}
           </div>

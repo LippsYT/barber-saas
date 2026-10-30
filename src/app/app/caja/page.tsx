@@ -40,30 +40,36 @@ export default function Caja() {
   return (
     <main className="space-y-4">
       <h1 className="h1">Caja</h1>
-      {result && <div className="card bg-green-50">Caja cerrada. Esperado {formatMoney(result.expected, biz.currency)} · Contado {formatMoney(result.counted, biz.currency)} · Diferencia {formatMoney(result.difference, biz.currency)}</div>}
+      {result && <div className="card border-emerald-200 bg-emerald-50 text-emerald-900">Caja cerrada. Esperado {formatMoney(result.expected, biz.currency)} · Contado {formatMoney(result.counted, biz.currency)} · Diferencia {formatMoney(result.difference, biz.currency)}</div>}
       {!sess ? (
-        <div className="card space-y-2"><div className="font-medium">No hay caja abierta</div>
+        <div className="card space-y-3"><div className="font-display text-xl font-semibold">No hay caja abierta</div>
           <label className="lbl">Fondo inicial en efectivo</label><input className="inp" type="number" min={0} value={float} onChange={(e) => setFloat(e.target.value)} />
           <button className="btn w-full" onClick={open}>Abrir caja</button>
-          <p className="text-xs text-gray-500">Si cobras sin abrir caja, se abre sola con fondo 0.</p></div>
+          <p className="text-xs text-muted-foreground">Si cobras sin abrir caja, se abre sola con fondo 0.</p></div>
       ) : (<>
+        <div className="relative overflow-hidden rounded-2xl bg-ink p-6 text-cream shadow-soft">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/20 blur-2xl" />
+          <div className="eyebrow text-gold">Debe haber en caja</div>
+          <div className="mt-1 font-display text-5xl font-semibold tabular-nums text-gold-300">{formatMoney(calc!.expected, biz.currency)}</div>
+          <div className="mt-2 text-sm text-cream/60">Fondo {formatMoney(calc!.opening_float, biz.currency)} · {calc!.lines.length} conceptos · abierta {new Date(sess.opened_at).toLocaleTimeString("es-CO", { timeZone: biz.timezone, hour: "numeric", minute: "2-digit" })}</div>
+        </div>
         <div className="card space-y-1">
-          <div className="text-sm text-gray-500">Abierta {new Date(sess.opened_at).toLocaleString("es-CO", { timeZone: biz.timezone })}</div>
+          <div className="text-sm text-muted-foreground">Abierta {new Date(sess.opened_at).toLocaleString("es-CO", { timeZone: biz.timezone })}</div>
           <div className="font-mono text-sm">
             <div className="flex justify-between"><span>Fondo inicial</span><span>{formatMoney(calc!.opening_float, biz.currency)}</span></div>
             {calc!.lines.map((l) => <div key={l.label} className="flex justify-between"><span>{l.label}</span><span>{formatSigned(l.amount, biz.currency)}</span></div>)}
             <div className="flex justify-between border-t font-bold"><span>= Efectivo esperado</span><span>{formatMoney(calc!.expected, biz.currency)}</span></div>
           </div>
           <details><summary className="cursor-pointer text-sm underline">Ver cálculo (línea por línea)</summary><div className="mt-2"><LedgerCalc entries={cashEntries} currency={biz.currency} start={calc!.opening_float} startLabel="Fondo inicial" /></div></details>
-          {isManager && Object.entries(otherMethodsTotals(entries)).map(([k, v]) => <div key={k} className="text-xs text-gray-500">Informativo · {k === "card_clearing" ? "Tarjeta" : "Banco/transferencia"}: {formatMoney(v, biz.currency)}</div>)}
+          {isManager && Object.entries(otherMethodsTotals(entries)).map(([k, v]) => <div key={k} className="text-xs text-muted-foreground">Informativo · {k === "card_clearing" ? "Tarjeta" : "Banco/transferencia"}: {formatMoney(v, biz.currency)}</div>)}
         </div>
-        <form onSubmit={addExpense} className="card space-y-2"><div className="font-medium">Registrar gasto</div>
+        <form onSubmit={addExpense} className="card space-y-2"><div className="font-display text-lg font-semibold">Registrar gasto</div>
           <input className="inp" required placeholder="¿Qué se pagó? (ej. insumos)" value={exp.desc} onChange={(e) => setExp({ ...exp, desc: e.target.value })} />
           <div className="flex gap-2"><input className="inp" type="number" min={1} required placeholder="Monto" value={exp.amount} onChange={(e) => setExp({ ...exp, amount: e.target.value })} />
             <select className="inp" value={exp.method} onChange={(e) => setExp({ ...exp, method: e.target.value })}><option value="cash">Efectivo</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option></select></div>
           <button className="btn2 w-full">Guardar gasto</button></form>
-        <div className="card space-y-2"><div className="font-medium">Cierre de caja</div>
-          <p className="text-sm text-gray-500">Cuenta los billetes y monedas:</p>
+        <div className="card space-y-2"><div className="font-display text-lg font-semibold">Cierre de caja</div>
+          <p className="text-sm text-muted-foreground">Cuenta los billetes y monedas:</p>
           <div className="grid grid-cols-3 gap-2">{COP_DENOMINATIONS.map((d) => (
             <label key={d} className="text-xs">{formatMoney(d, biz.currency)}<input className="inp py-2" type="number" min={0} value={counts[d] ?? ""} onChange={(e) => setCounts({ ...counts, [d]: Number(e.target.value) })} /></label>))}</div>
           <label className="lbl">…o escribe el total contado</label><input className="inp" type="number" min={0} placeholder={String(byDen)} value={manual} onChange={(e) => setManual(e.target.value)} />
@@ -76,7 +82,7 @@ export default function Caja() {
           <button className="btn w-full" onClick={close}>Cerrar caja</button></div>
       </>)}
       {err && <p className="text-sm text-red-600">{err}</p>}
-      {isManager && history.length > 0 && <div className="card text-sm"><div className="font-medium">Últimos cierres</div>{history.map((h) => <div key={h.id} className="border-b py-1">{new Date(h.closed_at).toLocaleString("es-CO", { timeZone: biz.timezone })} · esperado {formatMoney(h.expected_cash, biz.currency)} · contado {formatMoney(h.counted_cash, biz.currency)} · dif. {formatMoney(h.difference, biz.currency)}{h.notes && ` · "${h.notes}"`}</div>)}</div>}
+      {isManager && history.length > 0 && <div className="card text-sm"><div className="font-display text-lg font-semibold">Últimos cierres</div>{history.map((h) => <div key={h.id} className="border-b py-1">{new Date(h.closed_at).toLocaleString("es-CO", { timeZone: biz.timezone })} · esperado {formatMoney(h.expected_cash, biz.currency)} · contado {formatMoney(h.counted_cash, biz.currency)} · dif. {formatMoney(h.difference, biz.currency)}{h.notes && ` · "${h.notes}"`}</div>)}</div>}
     </main>
   );
 }

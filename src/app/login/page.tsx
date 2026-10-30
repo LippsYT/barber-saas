@@ -32,9 +32,9 @@ export default function Login() {
     } catch (err) { setMsg(errEs(err)); } finally { setBusy(false); }
   }
   return (
-    <main className="pt-8">
+    <main>
       <h1 className="h1">{signup ? "Crear cuenta" : "Entrar"}</h1>
-      <form onSubmit={submit} className="card space-y-3">
+      <form onSubmit={submit} className="space-y-3">
         <div><label className="lbl">Correo</label><input className="inp" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <div><label className="lbl">Contraseña</label><input className="inp" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
         <button className="btn w-full" disabled={busy}>{busy ? "..." : signup ? "Crear cuenta" : "Entrar"}</button>
@@ -42,7 +42,7 @@ export default function Login() {
         <button type="button" className="text-sm underline" onClick={() => setSignup(!signup)}>
           {signup ? "Ya tengo cuenta" : "Soy nuevo / me invitaron: crear cuenta"}
         </button>
-        <p className="text-xs text-gray-500">¿Te invitó tu barbería? Crea tu cuenta con el mismo correo que te registraron y entrarás directo.</p>
+        <p className="text-xs text-muted-foreground">¿Te invitó tu barbería? Crea tu cuenta con el mismo correo que te registraron y entrarás directo.</p>
       </form>
     </main>
   );

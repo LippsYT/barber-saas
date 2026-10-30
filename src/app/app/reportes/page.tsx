@@ -39,12 +39,12 @@ export default function Reportes() {
       </div>}
       <ul className="space-y-2">{rows.map((x) => (
         <li key={x.id} className="card">
-          <div className="font-medium">{x.name}</div>
+          <div className="font-display text-lg font-semibold">{x.name}</div>
           <div className="grid grid-cols-2 text-sm"><span>Servicios: {x.services}</span><span>Ventas: {x.sales}</span><span>Ingresos: {formatMoney(x.income, biz.currency)}</span><span>Propinas: {formatMoney(x.tips, biz.currency)}</span></div>
           <button className="mt-1 text-sm" onClick={() => setOpen(open === x.id ? null : x.id)}>Comisión: <b>{formatMoney(x.commission, biz.currency)}</b> <span className="underline">ver cálculo</span></button>
           {open === x.id && <div className="mt-2"><CommissionBreakdown entries={comm.filter((c) => c.member_id === x.id)} currency={biz.currency} /></div>}
         </li>))}
-        {!rows.length && <p className="text-gray-500">Sin ventas en este período.</p>}
+        {!rows.length && <p className="text-muted-foreground">Sin ventas en este período.</p>}
       </ul>
     </main>
   );

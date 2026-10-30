@@ -12,18 +12,19 @@ export default function Cita({ params }: { params: Promise<{ slug: string; token
   if (!b) return <main className="p-6">No encontramos esta cita.</main>;
   const st: Record<string, string> = { reserved: "Reservada", confirmed: "Confirmada", cancelled: "Cancelada", completed: "Atendida", no_show: "No asistió" };
   return (
-    <main className="mx-auto max-w-md space-y-3 p-4">
-      <h1 className="h1">{b.business_name}</h1>
-      <div className="card space-y-1">
-        <div className="text-lg font-bold">{st[b.status] ?? b.status}</div>
-        <div>{new Date(b.starts_at).toLocaleString("es-CO", { timeZone: b.timezone, dateStyle: "full", timeStyle: "short" })}</div>
-        <div>Con {b.member_name}</div>
+    <main className="min-h-screen bg-background"><div className="bg-ink px-5 pb-10 pt-12 text-cream"><div className="mx-auto max-w-md"><div className="eyebrow text-gold">Tu cita</div><h1 className="mt-1 font-display text-3xl font-semibold">{b.business_name}</h1></div></div>
+      <div className="mx-auto -mt-6 max-w-md space-y-3 px-4">
+      <div className="card space-y-2">
+        <div className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${b.status === "cancelled" ? "bg-red-100 text-red-800" : "bg-gold/20 text-gold-700"}`}>{st[b.status] ?? b.status}</div>
+        <div className="font-display text-xl capitalize">{new Date(b.starts_at).toLocaleString("es-CO", { timeZone: b.timezone, dateStyle: "full", timeStyle: "short" })}</div>
+        <div className="text-muted-foreground">Con {b.member_name}</div>
         {b.items.map((i: any) => <div key={i.name} className="flex justify-between text-sm"><span>{i.name}</span><span>{formatMoney(Number(i.price), b.currency)}</span></div>)}
       </div>
-      <p className="text-sm text-gray-500">Guarda este enlace para ver o cancelar tu cita.</p>
+      <p className="text-sm text-muted-foreground">Guarda este enlace para ver o cancelar tu cita.</p>
       {["reserved", "confirmed"].includes(b.status) && <button className="btn2 w-full" onClick={cancel}>Cancelar cita</button>}
       <a className="block text-center underline" href={`/b/${slug}`}>Reservar otra cita</a>
       {msg && <p>{msg}</p>}
+      </div>
     </main>
   );
 }

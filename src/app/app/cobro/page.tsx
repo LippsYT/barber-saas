@@ -62,15 +62,15 @@ export default function Cobro() {
     <main className="space-y-3">
       <h1 className="h1">Cobrar {appt && `· ${appt.client?.full_name ?? "cita"}`}</h1>
       {role !== "barber" && <select className="inp" value={member} onChange={(e) => setMember(e.target.value)}><option value="">¿Quién atendió?</option>{members.map((m) => <option key={m.id} value={m.id}>{m.display_name}</option>)}</select>}
-      <div className="card space-y-2"><div className="font-medium">Servicios</div>
+      <div className="card space-y-2"><div className="font-display text-lg font-semibold">Servicios</div>
         <div className="flex flex-wrap gap-2">{services.map((s) => { const on = items.includes(s.id); return (
-          <button key={s.id} className={`chip ${on ? "chip-on" : "bg-white"}`} onClick={() => setItems(on ? items.filter((x) => x !== s.id) : [...items, s.id])}>{s.name} {formatMoney(s.price, biz.currency)}</button>); })}</div></div>
+          <button key={s.id} className={`chip ${on ? "chip-on" : "bg-card"}`} onClick={() => setItems(on ? items.filter((x) => x !== s.id) : [...items, s.id])}>{s.name} {formatMoney(s.price, biz.currency)}</button>); })}</div></div>
       <div className="grid grid-cols-2 gap-2">
         <div><label className="lbl">Descuento</label><input className="inp" type="number" min={0} value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
         <div><label className="lbl">Propina</label><input className="inp" type="number" min={0} value={tip} onChange={(e) => setTip(e.target.value)} /></div>
       </div>
       <div className="card text-lg font-bold">Total: {formatMoney(total, biz.currency)}</div>
-      <div className="card space-y-2"><div className="font-medium">¿Cómo paga?</div>
+      <div className="card space-y-2"><div className="font-display text-lg font-semibold">¿Cómo paga?</div>
         {pays.map((p, i) => (<div key={i} className="flex gap-2">
           <select className="inp" value={p.method} onChange={(e) => setPays(pays.map((x, j) => (j === i ? { ...x, method: e.target.value } : x)))}>{METHODS.map((m) => <option key={m[0]} value={m[0]}>{m[1]}</option>)}</select>
           {!single && <input className="inp" type="number" placeholder="Monto" value={p.amount} onChange={(e) => setPays(pays.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))} />}

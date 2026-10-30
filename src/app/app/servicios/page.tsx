@@ -30,10 +30,10 @@ export default function Servicios() {
       </form>
       <ul className="space-y-2">{list.map((s) => (
         <li key={s.id} className="card flex items-center justify-between">
-          <div><div className={s.active ? "font-medium" : "line-through text-gray-400"}>{s.name}</div><div className="text-sm text-gray-500">{s.duration_min} min · {formatMoney(s.price, biz.currency)}</div></div>
+          <div><div className={s.active ? "font-medium" : "line-through text-gray-400"}>{s.name}</div><div className="text-sm text-muted-foreground">{s.duration_min} min · {formatMoney(s.price, biz.currency)}</div></div>
           <button className="btn2" onClick={() => toggle(s)}>{s.active ? "Desactivar" : "Activar"}</button>
         </li>))}
-        {!list.length && <p className="text-gray-500">Agrega tu primer servicio. Todos los barberos lo podrán hacer.</p>}
+        {!list.length && <p className="text-muted-foreground">Agrega tu primer servicio. Todos los barberos lo podrán hacer.</p>}
       </ul>
     </main>
   );

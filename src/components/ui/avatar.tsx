@@ -1,0 +1,6 @@
+import { cn } from "@/lib/utils";
+export function Avatar({ name, src, size = 56, className }: { name: string; src?: string | null; size?: number; className?: string }) {
+  const ini = name.replace(/\(.*\)/, "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
+  return src ? <img src={src} alt={name} width={size} height={size} className={cn("rounded-full object-cover ring-2 ring-gold/40", className)} style={{ width: size, height: size }} />
+    : <div aria-hidden className={cn("grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-ink-600 to-ink font-display font-semibold text-gold-300 ring-2 ring-gold/40", className)} style={{ width: size, height: size, fontSize: size * 0.38 }}>{ini}</div>;
+}

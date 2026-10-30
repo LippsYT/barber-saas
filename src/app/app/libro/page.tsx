@@ -29,7 +29,7 @@ export default function Libro() {
   return (
     <main>
       <h1 className="h1">Libro de caja</h1>
-      <p className="mb-3 text-sm text-gray-500">Nada se borra ni se edita: una anulación agrega un asiento inverso.</p>
+      <p className="mb-3 text-sm text-muted-foreground">Nada se borra ni se edita: una anulación agrega un asiento inverso.</p>
       <PeriodPicker kind={kind} setKind={setKind} anchor={anchor} setAnchor={setAnchor} tz={biz.timezone} />
       <div className="mb-4 space-y-2">{ACC.map(([label, accs]) => { const es = entries.filter((e) => accs.includes(e.account)); return (
         <div key={label} className="card">
@@ -40,7 +40,7 @@ export default function Libro() {
       <ul className="space-y-1">{entries.map((e) => (
         <li key={e.id} className="card py-2 text-sm">
           <div className="flex justify-between"><span>{TYPE_ES[e.type] ?? e.type} · {e.account === "payable_staff" ? "por pagar personal" : e.method ?? e.account}</span><span className={e.direction < 0 ? "text-red-700" : "text-green-700"}>{formatSigned(e.direction * e.amount, biz.currency)}</span></div>
-          <div className="text-gray-600">{e.description}</div>
+          <div className="text-muted-foreground">{e.description}</div>
           <div className="flex justify-between text-xs text-gray-400"><span>{new Date(e.occurred_at).toLocaleString("es-CO", { timeZone: biz.timezone })}</span>
             {e.source_table === "sales" && e.type === "sale_income" && !e.reversal_of && !reversed.has(e.id) && <button className="underline" onClick={() => voidSale(e.source_id)}>Anular venta</button>}</div>
         </li>))}</ul>
