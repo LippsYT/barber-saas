@@ -28,6 +28,13 @@ const ERR: Record<string, string> = {
   invalid_phone: "Teléfono inválido.",
   invalid_name: "Escribe tu nombre.",
   too_many_requests: "Demasiadas reservas seguidas. Intenta más tarde.",
+  "is invalid": "Ese correo no es válido o no se aceptan correos de ese dominio. Usa otro correo.",
+  "not authorized": "Por ahora no se pueden crear cuentas con ese correo. Usa otro o contacta al soporte.",
+  "Invalid login credentials": "Correo o contraseña incorrectos.",
+  "Email not confirmed": "Tu correo aún no está confirmado. Revisa tu bandeja de entrada.",
+  "User already registered": "Ya existe una cuenta con ese correo. Entra con tu contraseña.",
+  "Password should be at least": "La contraseña debe tener al menos 6 caracteres.",
+  "rate limit": "Demasiados intentos. Espera unos minutos y vuelve a intentar.",
   appointments_no_overlap: "El barbero ya tiene una cita en ese horario.",
 };
 export function errEs(e: unknown): string {
