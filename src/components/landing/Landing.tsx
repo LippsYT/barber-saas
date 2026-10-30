@@ -43,7 +43,7 @@ const FAQ = [
 export function Landing() {
   return (
     <div className="bg-[#F4F1E8] text-ink">
-      <a href="#inicio" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#D6FF4A] focus:px-3 focus:py-2">Saltar al contenido</a>
+      <a href="#inicio" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#D6FF4A] focus:text-ink focus:px-3 focus:py-2">Saltar al contenido</a>
       <header className="sticky top-0 z-30 border-b border-black/5 bg-[#F4F1E8]/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Logo />
@@ -112,7 +112,7 @@ export function Landing() {
               </div>
               <div className="mt-3 space-y-2">
                 <div className="rounded-xl bg-[#2F5BFF] p-2 text-[11px] text-white"><b>09:00</b> Kevin · servicio oro</div>
-                <div className="rounded-xl bg-[#D6FF4A] p-2 text-[11px]"><b>10:30</b> Andrés · servicio vip</div>
+                <div className="rounded-xl bg-[#D6FF4A] p-2 text-[11px] text-ink"><b>10:30</b> Andrés · servicio vip</div>
                 <div className="rounded-xl bg-[#FF5A7A] p-2 text-[11px] text-white"><b>12:00</b> Ricardo · kids</div>
               </div>
             </div>
@@ -146,7 +146,7 @@ export function Landing() {
         </div>
         <div className="order-1 md:order-2">
           <Kicker n="03" label="Caja" />
-          <h2 className="display text-5xl sm:text-7xl">Caja clara.<br />Al <span className="bg-[#D6FF4A] px-2">centavo.</span></h2>
+          <h2 className="display text-5xl sm:text-7xl">Caja clara.<br />Al <span className="bg-[#D6FF4A] px-2 text-ink">centavo.</span></h2>
           <p className="mt-5 max-w-md text-lg text-ink/70">Fondo, ventas, gastos y anulaciones. Cada total tiene “ver cálculo”: los asientos, uno por uno. Nada se borra; se reversa.</p>
         </div>
       </Slide>

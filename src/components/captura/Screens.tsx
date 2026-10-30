@@ -140,7 +140,7 @@ export function Screens({ vista }: { vista: string }) {
   );
   if (vista === "clientes") return (
     <Frame tab="/app/clientes">
-      <div className="mb-3 flex items-end justify-between"><h1 className="display text-4xl">Clientes</h1><span className="pill bg-[#D6FF4A]">128</span></div>
+      <div className="mb-3 flex items-end justify-between"><h1 className="display text-4xl">Clientes</h1><span className="pill bg-[#D6FF4A] text-ink">128</span></div>
       <div className="inp mb-3">Buscar por nombre o teléfono</div>
       {[["C", "Camila Soto", "593991112233"], ["M", "Mateo Ruiz", "593992223344"], ["E", "Elena Paz", "593993334455"]].map(([i, n, p]) => (
         <div key={n} className="card mb-2 flex items-center gap-3">

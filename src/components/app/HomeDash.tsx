@@ -27,7 +27,7 @@ export function HomeDash({
         <div className="text-xs font-extrabold uppercase tracking-widest text-ink/40">Tus ventas · {monthLabel}</div>
         <div className="display mt-1 text-5xl text-[#14944A] sm:text-6xl">{formatMoney(salesCents)}</div>
         <div className="mt-1 text-sm text-ink/55">{daysLeft <= 0 ? "Último día del mes" : daysLeft === 1 ? "Queda 1 día del mes" : `Quedan ${daysLeft} días de ${monthLabel}`}</div>
-        {delta !== null && <div className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-extrabold ${delta >= 0 ? "bg-[#D6FF4A]" : "bg-[#FFE1E7]"}`}>{delta >= 0 ? "+" : ""}{delta}% vs mes anterior</div>}
+        {delta !== null && <div className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-extrabold ${delta >= 0 ? "bg-[#D6FF4A] text-ink" : "bg-[#FFE1E7] text-[#7A0F24]"}`}>{delta >= 0 ? "+" : ""}{delta}% vs mes anterior</div>}
         <Chispa pose="run" className="pointer-events-none absolute bottom-1 right-1 w-24" />
       </section>
       <section>

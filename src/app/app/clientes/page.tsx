@@ -49,7 +49,7 @@ export default function Clientes() {
   );
   return (
     <main>
-      <div className="mb-3 flex items-end justify-between"><h1 className="display text-4xl">Clientes</h1><span className="pill bg-[#D6FF4A]">{list.length}</span></div>
+      <div className="mb-3 flex items-end justify-between"><h1 className="display text-4xl">Clientes</h1><span className="pill bg-[#D6FF4A] text-ink">{list.length}</span></div>
       <input className="inp mb-3" placeholder="Buscar por nombre o teléfono" value={q} onChange={(e) => setQ(e.target.value)} />
       <form onSubmit={add} className="card mb-4 flex flex-col gap-2 sm:flex-row">
         <input className="inp" required placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} />

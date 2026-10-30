@@ -87,12 +87,12 @@ export function WhatsAppConnect({
           </ol>
         </div>
         {(demo || preview?.demo) && (
-          <div className="rounded-2xl border border-[#D6FF4A] bg-[#F4FFC8] p-3 text-sm">
+          <div role="status" className="rounded-2xl border border-[#B45309] bg-[#FFF4CC] p-3 text-sm text-[#3D2A00]">
             <b>Modo demo.</b> No hay <span className="font-mono">EVOLUTION_API_URL</span>. Este código no vincula un WhatsApp real.
           </div>
         )}
         {demo ? <button className="btn w-full" disabled={busy} onClick={confirmDemo}>Ya introduje el código</button> : <button className="btn2 w-full" onClick={refresh}>Ya lo vinculé, revisar</button>}
-        {onSkip && <button className="w-full text-sm font-semibold text-ink/50" onClick={onSkip}>Ahora no</button>}
+        {onSkip && <button className="w-full text-sm font-semibold underline-offset-2 opacity-80 hover:underline" onClick={onSkip}>Ahora no</button>}
         {err && <p className="text-sm text-red-600">{err}</p>}
       </div>
     );
