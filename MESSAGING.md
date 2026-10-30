@@ -25,5 +25,11 @@ disponible en plan gratis). Solo hace la llamada si hay mensajes vencidos. Vault
 
 ## Env
 `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `CRON_SECRET`, `WHATSAPP_SEND_ALLOWLIST`, `WHATSAPP_FALLBACK_INSTANCE`,
-`RESEND_API_KEY` (opcional; sin ella email = mock), `EMAIL_FROM`, `EMAIL_SEND_ALLOWLIST`,
+`BREVO_API_KEY` (opcional, prioridad; API v3 `POST /v3/smtp/email`, sender desde `EMAIL_FROM` "Nombre <email>" o email; requiere EMAIL_FROM), `RESEND_API_KEY` (fallback; sin ninguna, email = mock), `EMAIL_FROM`, `EMAIL_SEND_ALLOWLIST`,
 `GOOGLE_WALLET_ISSUER_ID`, `GOOGLE_WALLET_SA_KEY` (opcional; sin ellas no se muestra el botón de Wallet).
+
+## Deduplicación de cola (migración 0018)
+Índices únicos parciales en `scheduled_messages` (solo filas `pending/sending/sent` con `appointment_id`):
+confirmación/cancelación = 1 por (cita, canal, kind); recordatorio = 1 por (cita, canal, send_at) → 24h y 2h conviven.
+Reactivación/custom no tienen cita y quedan fuera. Los inserts de `public_create_booking`, `schedule_reminders`
+y `appointments_msg_sync` usan `ON CONFLICT DO NOTHING`.
