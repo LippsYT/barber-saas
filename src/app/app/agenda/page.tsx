@@ -80,7 +80,9 @@ export default function Agenda() {
     const patch: Record<string, string> = { status };
     if (status === "cancelled") { const r = prompt("Motivo de la cancelación"); if (r === null) return; patch.cancel_reason = r; }
     const { error } = await sb().from("appointments").update(patch).eq("id", a.id);
-    if (error) alert(errEs(error)); load();
+    if (error) alert(errEs(error));
+    else if (status === "cancelled") fetch("/api/messages/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appointmentId: a.id }) }).catch(() => {});
+    load();
   }
 
   const blocks: WeekBlock[] = appts.filter((a) => !["cancelled", "no_show"].includes(a.status) && (!filter || a.member_id === filter)).map((a) => ({

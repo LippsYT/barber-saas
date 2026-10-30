@@ -18,13 +18,17 @@ create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant usage on schema auth to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
+-- Vault de Supabase (stub): el worker valida p_secret contra 'cron_secret'.
+create schema vault;
+create table vault.decrypted_secrets (name text primary key, decrypted_secret text);
+insert into vault.decrypted_secrets values ('cron_secret', repeat('s', 64)), ('app_base_url', 'https://pulso.test');
 `;
 
 export async function createDb() {
   const db = new PGlite({ extensions: { btree_gist } });
   await db.exec(AUTH_STUB);
   const dir = path.resolve(import.meta.dirname, "../../supabase/migrations");
-  for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()) {
+  for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".sql") && !f.includes("_msg_cron")).sort() /* pg_cron/pg_net no existen en PGlite */) {
     try {
       await db.exec(fs.readFileSync(path.join(dir, f), "utf8"));
     } catch (e) {

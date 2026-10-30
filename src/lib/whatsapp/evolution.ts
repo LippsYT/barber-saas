@@ -1,5 +1,5 @@
 import { parseEvolutionConnect, parseEvolutionState, type LinkState } from "./parse";
-import type { WhatsAppProvider } from "./types";
+import type { SendResult, WhatsAppProvider } from "./types";
 
 export interface EvolutionConfig {
   baseUrl: string;
@@ -55,5 +55,20 @@ export function createEvolutionProvider(cfg: EvolutionConfig): WhatsAppProvider 
       const body = await call(`/instance/connectionState/${encodeURIComponent(instanceName)}`);
       return parseEvolutionState(body);
     },
+    async sendText(instanceName, number, text): Promise<SendResult> {
+      const body = await call(`/message/sendText/${encodeURIComponent(instanceName)}`, {
+        method: "POST",
+        body: JSON.stringify({ number, text }),
+      });
+      return parseSendResult(body);
+    },
   };
+}
+
+/** Evolution v2 responde { key: { id }, status: "PENDING" | ... }. */
+export function parseSendResult(body: unknown): SendResult {
+  const b = (body ?? {}) as { key?: { id?: unknown }; status?: unknown };
+  const id = typeof b.key?.id === "string" ? b.key.id : "";
+  if (!id) throw new Error("evolution_no_message_id");
+  return { id, status: typeof b.status === "string" ? b.status : undefined };
 }

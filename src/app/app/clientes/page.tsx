@@ -31,6 +31,13 @@ export default function Clientes() {
     ]);
     setHist({ appts: appts ?? [], sales: sales ?? [] });
   }
+  const [reMsg, setReMsg] = useState(""); const [reBusy, setReBusy] = useState(false);
+  async function sendReactivation() {
+    if (!confirm(`¿Enviar ahora a ${sel.full_name} un WhatsApp invitándolo a volver?`)) return;
+    setReBusy(true); setReMsg("");
+    const r = await fetch("/api/messages/reactivate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientId: sel.id }) });
+    const j = await r.json().catch(() => ({})); setReBusy(false); setReMsg(j.message || j.error || "No se pudo enviar.");
+  }
   async function saveNotes() { await sb().from("clients").update({ notes: sel.notes }).eq("id", sel.id); }
   if (sel) return (
     <main>
@@ -40,6 +47,8 @@ export default function Clientes() {
         <div className="flex items-center justify-between gap-2 text-sm">{sel.phone ? <span>{sel.phone}</span> : <span>Sin teléfono</span>}{sel.phone && <a className="grid h-10 w-10 place-items-center rounded-full bg-[#25D366] text-white" href={waHref(sel.phone)} target="_blank" rel="noreferrer" aria-label={`WhatsApp a ${sel.full_name}`}><MessageCircle className="h-5 w-5" /></a>}</div>
         <textarea className="inp" placeholder="Notas (ej. degradado bajo, alérgico a…)" value={sel.notes ?? ""} onChange={(e) => setSel({ ...sel, notes: e.target.value })} />
         <button className="btn2" onClick={saveNotes}>Guardar notas</button>
+        {sel.phone && <button className="btn2" disabled={reBusy} onClick={sendReactivation}>{reBusy ? "Enviando…" : "Enviar recordatorio de regreso"}</button>}
+        {reMsg && <p className="text-sm" role="status">{reMsg}</p>}
       </div>
       <h2 className="mt-4 font-bold">Citas</h2>
       <ul className="text-sm">{hist.appts.map((a: any) => <li key={a.id} className="border-b py-1">{new Date(a.starts_at).toLocaleString("es-CO", { timeZone: biz.timezone })} · {a.member?.display_name} · {a.status}</li>)}</ul>

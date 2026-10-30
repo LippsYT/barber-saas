@@ -1,0 +1,137 @@
+import { describe, expect, it } from "vitest";
+import { generateKeyPairSync, createVerify } from "crypto";
+import { allowedToSend, sendPolicy, sendPolicyFor } from "./allowlist";
+import { processQueue, type ClaimedMessage, type QueueRpc } from "./sender";
+import { createMockProvider } from "@/lib/whatsapp/mock";
+import { createEvolutionProvider, parseSendResult } from "@/lib/whatsapp/evolution";
+import { createMockEmailProvider } from "./email";
+import { cancellationText, confirmationText, reactivationSettings, reactivationText, reminderText } from "./templates";
+import { buildIcs, googleCalendarUrl } from "@/lib/calendar";
+import { walletPayload, signWalletJwt, saveToWalletUrl } from "@/lib/gwallet";
+
+const OWNER = "+5491157604074";
+
+describe("allowlist", () => {
+  it("con lista: solo esos números", () => {
+    const p = sendPolicy({ WHATSAPP_SEND_ALLOWLIST: OWNER, VERCEL_ENV: "preview" });
+    expect(allowedToSend("+54 9 11 5760-4074", p)).toBe(true);
+    expect(allowedToSend("+593999111222", p)).toBe(false);
+  });
+  it("sin lista fuera de producción: nadie", () => {
+    expect(allowedToSend(OWNER, sendPolicy({ VERCEL_ENV: "preview" }))).toBe(false);
+    expect(allowedToSend(OWNER, sendPolicy({}))).toBe(false);
+  });
+  it("sin lista en producción: todos", () => {
+    expect(allowedToSend("+593999111222", sendPolicy({ VERCEL_ENV: "production" }))).toBe(true);
+  });
+  it("email: compara en minúsculas", () => {
+    const p = sendPolicyFor("Dueno@Example.com", { VERCEL_ENV: "preview" });
+    expect(allowedToSend("dueno@example.com", p)).toBe(true);
+    expect(allowedToSend("otro@example.com", p)).toBe(false);
+  });
+});
+
+function fakeRpc(rows: ClaimedMessage[]) {
+  const finished: Record<string, string> = {};
+  const rpc: QueueRpc = {
+    async claim() { return rows; },
+    async finish(id, status, providerId, err) { finished[id] = `${status}${providerId ? ":" + providerId : ""}${err ? ":" + err : ""}`; return status; },
+  };
+  return { rpc, finished };
+}
+const row = (o: Partial<ClaimedMessage>): ClaimedMessage => ({ id: "m1", business_id: "b", kind: "confirmation", to_phone: OWNER, body: "hola", attempts: 1, instance_name: "pulso-x", ...o });
+
+describe("cola", () => {
+  const live = () => { const p = createMockProvider(); return Object.assign(p, { demo: false }); };
+  it("envía al permitido y salta al resto", async () => {
+    const { rpc, finished } = fakeRpc([row({ id: "a" }), row({ id: "b", to_phone: "+593999111222" })]);
+    const prov = live();
+    const out = await processQueue(rpc, prov, sendPolicy({ WHATSAPP_SEND_ALLOWLIST: OWNER }));
+    expect(out.map((o) => o.result)).toEqual(["sent", "skipped"]);
+    expect(prov.sent).toHaveLength(1);
+    expect(prov.sent[0].number).toBe("5491157604074");
+    expect(finished.b).toContain("not_in_allowlist");
+  });
+  it("sin instancia conectada: failed (reintento lo decide SQL)", async () => {
+    const { rpc } = fakeRpc([row({ instance_name: null })]);
+    expect((await processQueue(rpc, live(), sendPolicy({ WHATSAPP_SEND_ALLOWLIST: OWNER })))[0].result).toBe("failed");
+  });
+  it("proveedor demo nunca envía", async () => {
+    const { rpc } = fakeRpc([row({})]);
+    expect((await processQueue(rpc, createMockProvider(), sendPolicy({ WHATSAPP_SEND_ALLOWLIST: OWNER })))[0].result).toBe("skipped");
+  });
+  it("email solo en confirmación/cancelación, primer intento y con allowlist", async () => {
+    const { rpc } = fakeRpc([row({ id: "a", to_email: "yo@x.com" }), row({ id: "b", kind: "reminder", to_email: "yo@x.com" }), row({ id: "c", to_email: "otro@x.com" })]);
+    const em = createMockEmailProvider();
+    const out = await processQueue(rpc, live(), sendPolicy({ WHATSAPP_SEND_ALLOWLIST: OWNER }), {}, { provider: em, policy: sendPolicyFor("yo@x.com", {}) });
+    expect(out.map((o) => o.email)).toEqual(["sent:MOCK-EMAIL-1", undefined, "skipped"]);
+    expect(em.sent).toHaveLength(1);
+  });
+});
+
+describe("evolution sendText", () => {
+  it("POST /message/sendText/{instance} con apikey", async () => {
+    let call: { url: string; init: RequestInit } | null = null;
+    const p = createEvolutionProvider({ baseUrl: "https://evo.test/", apiKey: "k", fetchImpl: (async (url: string, init: RequestInit) => { call = { url, init }; return new Response(JSON.stringify({ key: { id: "3EB0ABC" }, status: "PENDING" }), { status: 201 }); }) as unknown as typeof fetch });
+    expect(await p.sendText("pulso-x", "5491157604074", "hola")).toEqual({ id: "3EB0ABC", status: "PENDING" });
+    expect(call!.url).toBe("https://evo.test/message/sendText/pulso-x");
+    expect((call!.init.headers as Record<string, string>).apikey).toBe("k");
+    expect(JSON.parse(String(call!.init.body))).toEqual({ number: "5491157604074", text: "hola" });
+  });
+  it("sin id es error", () => { expect(() => parseSendResult({})).toThrow(); });
+});
+
+describe("plantillas", () => {
+  it("reactivación con el texto pedido", () => {
+    expect(reactivationText("Felippe", 25, "Lumos", "https://x/lumos")).toBe("Hola Felippe, ya pasaron 25 días desde tu último corte en Lumos. ¿Agendamos el próximo? Reservá acá: https://x/lumos");
+  });
+  it("otras", () => {
+    expect(cancellationText("A", "B", "31/10 a las 10:10", "L")).toContain("fue cancelada");
+    expect(confirmationText("A", "B", "C", "D", "/x")).toMatch(/^¡Listo A!/);
+    expect(reminderText("A", "B", "D")).toContain("te recordamos");
+  });
+  it("ajustes: default OFF y 25 días", () => {
+    expect(reactivationSettings(null)).toEqual({ enabled: false, days: 25 });
+    expect(reactivationSettings({ reactivation: { enabled: true, days: 40 } })).toEqual({ enabled: true, days: 40 });
+    expect(reactivationSettings({ reactivation: { enabled: true, days: 2 } }).days).toBe(25);
+  });
+});
+
+describe("calendario", () => {
+  const ev = { uid: "abc", start: "2026-10-31T15:10:00Z", end: "2026-10-31T15:40:00Z", title: "Corte, barba · House Davidson", location: "House Davidson; Quito", description: "Con Andrés.\nVer o cancelar: https://x/c/t", url: "https://x/c/t", timezone: "America/Guayaquil" };
+  it(".ics válido", () => {
+    const ics = buildIcs(ev, new Date("2026-10-30T00:00:00Z"));
+    expect(ics).toContain("DTSTART:20261031T151000Z");
+    expect(ics).toContain("SUMMARY:Corte\\, barba · House Davidson");
+    expect(ics).toContain("LOCATION:House Davidson\\; Quito");
+    expect(ics.split("\r\n").every((l) => new TextEncoder().encode(l).length <= 75)).toBe(true);
+    expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
+  });
+  it("Google Calendar", () => {
+    const u = new URL(googleCalendarUrl(ev));
+    expect(u.searchParams.get("dates")).toBe("20261031T151000Z/20261031T154000Z");
+    expect(u.searchParams.get("ctz")).toBe("America/Guayaquil");
+  });
+});
+
+describe("google wallet", () => {
+  const appt = { id: "a-1", business: "House Davidson", startsAt: "2026-10-31T15:10:00Z", timezone: "America/Guayaquil", service: "Corte", barber: "Andrés", url: "https://x/c/t" };
+  it("payload", () => {
+    const p = walletPayload("338800", "sa@p.iam.gserviceaccount.com", appt, "https://x");
+    expect(p).toMatchObject({ iss: "sa@p.iam.gserviceaccount.com", aud: "google", typ: "savetowallet", origins: ["https://x"] });
+    const o = p.payload.genericObjects[0];
+    expect(o.id).toBe("338800.cita_a-1"); expect(o.classId).toBe("338800.pulso_cita");
+    expect(o.textModulesData.map((t) => t.header)).toEqual(["Servicio", "Barbero"]);
+  });
+  it("JWT RS256 verificable; sin env no hay link", () => {
+    const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+    const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
+    const jwt = signWalletJwt({ a: 1 }, pem);
+    const [h, b, s] = jwt.split(".");
+    const v = createVerify("RSA-SHA256"); v.update(`${h}.${b}`);
+    expect(v.verify(publicKey, Buffer.from(s, "base64url"))).toBe(true);
+    expect(saveToWalletUrl(appt, "https://x", {})).toBeNull();
+    const url = saveToWalletUrl(appt, "https://x", { GOOGLE_WALLET_ISSUER_ID: "1", GOOGLE_WALLET_SA_KEY: JSON.stringify({ client_email: "e", private_key: pem }) });
+    expect(url).toMatch(/^https:\/\/pay\.google\.com\/gp\/v\/save\//);
+  });
+});

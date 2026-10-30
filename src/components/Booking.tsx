@@ -104,6 +104,8 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
     const { data, error } = await sb().rpc("public_create_booking", { p_slug: slug, p_member: slot.member_id, p_service_ids: svc, p_starts_at: slot.slot_start, p_name: form.name, p_phone: form.phone, p_opt_in: form.optIn, p_notes: null });
     setBusy(false);
     if (error) return setErr(errEs(error));
+    // Confirmación por WhatsApp al instante (el cron la manda igual si esto falla).
+    await fetch("/api/messages/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appointmentId: data.appointment_id }), keepalive: true }).catch(() => {});
     location.href = `/${slug}/cita/${data.manage_token}`;
   }
 
