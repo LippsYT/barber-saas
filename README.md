@@ -13,7 +13,7 @@ Next.js 16 (App Router) + TypeScript + Tailwind + Supabase (Postgres + Auth + RL
 ## Setup
 1. `npm install`
 2. Crear un proyecto Supabase y aplicar en orden `supabase/migrations/*.sql` (SQL editor o `supabase db push`).
-3. Opcional: `supabase/seed.sql` / script de demo.
+3. (Pendiente) No hay seed de demo aún: crear dueño vía `/login` + `/onboarding`.
 4. Variables de entorno (`.env.local` y en Vercel):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
