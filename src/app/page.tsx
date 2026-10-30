@@ -66,7 +66,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Link href="/" className="flex items-center gap-2 font-display text-xl"><Scissors className="h-5 w-5 text-gold" />Barbería<span className="text-gold">.</span></Link>
           <nav className="hidden gap-8 text-sm text-cream/70 md:flex"><a href="#beneficios" className="hover:text-cream">Beneficios</a><a href="#como" className="hover:text-cream">Cómo funciona</a><a href="#precios" className="hover:text-cream">Precios</a><a href="#faq" className="hover:text-cream">Preguntas</a></nav>
-          <div className="flex items-center gap-2"><Link href="/login" className="rounded-lg px-3 py-2 text-sm text-cream/80 hover:text-cream">Entrar</Link><Link href="/login?modo=registro" className="btn-gold py-2 text-sm">Crear mi barbería</Link></div>
+          <div className="flex items-center gap-2"><Link href="/login" className="rounded-lg px-3 py-2 text-sm text-cream/80 hover:text-cream">Entrar</Link><Link href="/login?modo=registro" className="btn-gold whitespace-nowrap py-2 text-sm"><span className="sm:hidden">Empezar</span><span className="hidden sm:inline">Crear mi barbería</span></Link></div>
         </div>
       </header>
 
