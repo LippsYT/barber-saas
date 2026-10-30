@@ -16,7 +16,17 @@ así Vercel no necesita la service_role key. Envía desde la instancia `whatsapp
 Programación: pg_cron `send-messages` cada 3 min llama `_kick_sender()` → pg_net POST al worker con
 `Authorization: Bearer <cron_secret>` y `x-vercel-protection-bypass: <vercel_bypass>` (Protection Bypass for Automation,
 disponible en plan gratis). Solo hace la llamada si hay mensajes vencidos. Vault: `cron_secret`, `vercel_bypass`,
-`cron_target_url` (alias git-preview), `app_base_url`.
+`cron_target_url` (el worker; puede ser el alias de preview), `app_base_url`.
+
+## URL de los links
+Los cuerpos guardan el marcador `{{BASE}}`. Al enviar, el worker lo reemplaza con `APP_BASE_URL`
+(sin barra final). Si esa variable falta, o si apunta a un host `barber-saas-*.vercel.app` que no es el alias
+de producción, se usa `https://barber-saas-lippsyts-projects.vercel.app`. El sender no lee `VERCEL_URL`,
+`VERCEL_BRANCH_URL` ni `VERCEL_PROJECT_PRODUCTION_URL`. Lo mismo vale para confirmación, recordatorios,
+cancelación, reactivación (job y botón) y para el link que queda dentro del .ics / Wallet.
+
+`0020_canonical_base_url.sql` (archivo nuevo, **no aplicado**) reescribe hosts de preview ya guardados en
+mensajes `pending`/`sending` y hace que `_app_base_url()` ignore esos hosts si el vault todavía los tiene.
 
 ## Seguridad
 - `WHATSAPP_SEND_ALLOWLIST` (E.164, coma). Con lista: el resto queda `skipped`. Sin lista: producción envía a todos;

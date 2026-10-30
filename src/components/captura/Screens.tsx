@@ -1,5 +1,6 @@
 "use client";
 import { Booking } from "@/components/Booking";
+import { CitaPublic } from "@/components/CitaPublic";
 import { HomeDash } from "@/components/app/HomeDash";
 import { WeekGrid } from "@/components/app/WeekGrid";
 import { ServiceEditor, type ServiceDraft } from "@/components/app/ServiceEditor";
@@ -86,7 +87,22 @@ const serviceDraft: ServiceDraft = {
   ],
 };
 
+const inTwoDays = new Date(Date.now() + 2 * 86400000);
+const citaFixture = {
+  status: "reserved" as const,
+  starts_at: new Date(Date.UTC(inTwoDays.getUTCFullYear(), inTwoDays.getUTCMonth(), inTwoDays.getUTCDate(), 15, 10, 0)).toISOString(),
+  member_name: "Kevin Álvarez",
+  business_name: "House Davidson",
+  timezone: "America/Guayaquil",
+  currency: "USD",
+  address: "avenida reales tamarindo y Joaquín Ramírez, Portoviejo",
+  items: [{ name: "servicio oro", price: 1400 }],
+};
+
 export function Screens({ vista }: { vista: string }) {
+  if (vista === "cita-reservada" || vista === "cita-cancelada") {
+    return <CitaPublic slug="house-davidson" token="preview" fixture={{ ...citaFixture, status: vista === "cita-cancelada" ? "cancelled" : "reserved" }} />;
+  }
   if (vista.startsWith("reserva-")) {
     const map = { "reserva-fecha": 0, "reserva-barbero": 1, "reserva-servicio": 2, "reserva-horario": 3, "reserva-datos": 4 } as const;
     const step = map[vista as keyof typeof map] ?? 0;

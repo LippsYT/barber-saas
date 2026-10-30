@@ -82,4 +82,14 @@ describe("cola de mensajes", () => {
     expect(f2.f).toBe("Sábado 31 de octubre, 12:05 p. m.");
     expect((await rows<{ u: string }>(db, "select _usd(1200) u"))[0].u).toBe("US$ 12,00");
   });
+  it("0020: _app_base_url no devuelve un host de preview", async () => {
+    expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://pulso.test");
+    await db.exec("update vault.decrypted_secrets set decrypted_secret = 'https://barber-saas-git-preview-lippsyts-projects.vercel.app/' where name = 'app_base_url'");
+    expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://barber-saas-lippsyts-projects.vercel.app");
+    await db.exec("update vault.decrypted_secrets set decrypted_secret = '' where name = 'app_base_url'");
+    expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://barber-saas-lippsyts-projects.vercel.app");
+    const [rewritten] = await rows<{ t: string }>(db, `select regexp_replace('Reserva aquí: https://barber-saas-git-preview-lippsyts-projects.vercel.app/house', 'https?://barber-saas[a-zA-Z0-9.-]*\\.vercel\\.app', 'https://barber-saas-lippsyts-projects.vercel.app', 'gi') t`);
+    expect(rewritten.t).toBe("Reserva aquí: https://barber-saas-lippsyts-projects.vercel.app/house");
+    await db.exec("update vault.decrypted_secrets set decrypted_secret = 'https://pulso.test' where name = 'app_base_url'");
+  });
 });

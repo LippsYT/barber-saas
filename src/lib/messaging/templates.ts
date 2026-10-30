@@ -1,5 +1,7 @@
 /** Mismos textos que en SQL (0019). Sirven para la vista previa en Ajustes y para tests. {{BASE}} lo reemplaza el sender. */
 export const REACTIVATION_DEFAULT_DAYS = 25;
+/** URL pública de producción. Nunca usar VERCEL_URL ni la URL de una rama. */
+export const CANONICAL_BASE = "https://barber-saas-lippsyts-projects.vercel.app";
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const first = (n: string) => n.trim().split(/\s+/)[0] ?? n;
@@ -30,12 +32,43 @@ export function cancellationText(name: string, business: string, startsAt: strin
 export function reactivationText(name: string, days: number, business: string, link: string) {
   return `💈 *${business}*\n\nHola ${first(name)}, ya pasaron ${days} días desde tu último corte. ¿Agendamos el próximo?\n\nReserva aquí: ${link}`;
 }
-/** URL base absoluta del deploy (sin / final). */
-export function appBaseUrl(env: Record<string, string | undefined> = process.env) {
-  const v = env.APP_BASE_URL?.trim() || (env.VERCEL_ENV === "production" ? env.VERCEL_PROJECT_PRODUCTION_URL : env.VERCEL_BRANCH_URL) || env.VERCEL_URL || "";
-  return v ? (v.startsWith("http") ? v : `https://${v}`).replace(/\/+$/, "") : "";
+
+function absolute(v: string) {
+  return (v.startsWith("http") ? v : `https://${v}`).replace(/\/+$/, "");
 }
-export const withBase = (body: string, base: string) => body.replaceAll("{{BASE}}", base);
+/** Host de un deploy de Vercel que no es el alias de producción. */
+export function isPreviewHost(url: string) {
+  try {
+    const host = new URL(absolute(url)).host;
+    return host.endsWith(".vercel.app") && host.startsWith("barber-saas") && host !== "barber-saas-lippsyts-projects.vercel.app";
+  } catch { return false; }
+}
+/**
+ * URL base absoluta, sin / final.
+ * Prefiere APP_BASE_URL. Si falta, o si apunta a un deploy de preview/rama, usa la URL de producción.
+ * No lee VERCEL_URL, VERCEL_BRANCH_URL ni VERCEL_PROJECT_PRODUCTION_URL.
+ */
+export function appBaseUrl(env: Record<string, string | undefined> = process.env) {
+  const raw = env.APP_BASE_URL?.trim();
+  if (raw) {
+    const abs = absolute(raw);
+    if (!isPreviewHost(abs)) return abs;
+  }
+  return CANONICAL_BASE;
+}
+export function absoluteUrl(path: string, env: Record<string, string | undefined> = process.env) {
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = appBaseUrl(env);
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+/** Sustituye {{BASE}} y cualquier host de preview ya guardado en el cuerpo. */
+export function withBase(body: string, base: string) {
+  const canonical = (base && !isPreviewHost(base) ? base : CANONICAL_BASE).replace(/\/+$/, "");
+  return body
+    .replaceAll("{{BASE}}", canonical)
+    .replace(/https?:\/\/barber-saas[a-z0-9.-]*\.vercel\.app/gi, canonical)
+    .replace(/((?:aquí|acá|otra):\s*)\/(?!\/)/gi, `$1${canonical}/`);
+}
 /** WhatsApp → texto plano para email. */
 export const plainText = (body: string) => body.replace(/\*([^*\n]+)\*/g, "$1");
 export function reactivationSettings(settings: unknown): { enabled: boolean; days: number } {

@@ -9,6 +9,17 @@ Next.js 16 (App Router) + TypeScript + Tailwind + Supabase (Postgres + Auth + RL
 - Público: `/{barberia}` (fecha → barbero → servicio → horario → datos), `/{barberia}/{barbero}`, `/{barberia}/cita/{token}`
 - Los links viejos `/b/...` redirigen de forma permanente a la URL corta.
 
+## Vercel Toolbar
+Quedó apagada en producción y en preview:
+
+- Ajuste del proyecto en Vercel: Toolbar **Off** en Preview y Production (`enablePreviewFeedback: false`, `enableProductionFeedback: false`).
+- Variable `VERCEL_PREVIEW_FEEDBACK_ENABLED=0` en production, preview y development. En preview, Vercel la usa para apagar la toolbar de una rama.
+- `vercel.json` manda el header de respuesta `x-vercel-skip-toolbar: 1`. La documentación de Vercel define ese nombre como header de **request** para que un test automatizado no reciba el script; el apagado durable es el ajuste del proyecto más la variable.
+- La app no depende de `@vercel/toolbar`. No había que quitar ese paquete.
+
+## Links de WhatsApp
+La base canónica es `https://barber-saas-lippsyts-projects.vercel.app` (`APP_BASE_URL`, o ese valor si la variable falta). Ver `MESSAGING.md`. La migración `supabase/migrations/0020_canonical_base_url.sql` corrige filas y `_app_base_url()`; **no está aplicada**.
+
 ## Setup
 1. `npm install`
 2. Crear un proyecto Supabase y aplicar en orden `supabase/migrations/*.sql` (SQL editor o `supabase db push`). **No asumas que ya están aplicadas.**

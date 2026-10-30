@@ -5,7 +5,7 @@ import { processQueue, type ClaimedMessage, type QueueRpc } from "./sender";
 import { createMockProvider } from "@/lib/whatsapp/mock";
 import { createEvolutionProvider, parseSendResult } from "@/lib/whatsapp/evolution";
 import { createMockEmailProvider } from "./email";
-import { appBaseUrl, cancellationText, citaText, fechaEs, plainText, reactivationSettings, reactivationText, withBase } from "./templates";
+import { CANONICAL_BASE, appBaseUrl, cancellationText, citaText, fechaEs, isPreviewHost, plainText, reactivationSettings, reactivationText, withBase } from "./templates";
 import { buildIcs, googleCalendarUrl } from "@/lib/calendar";
 import { walletPayload, signWalletJwt, saveToWalletUrl } from "@/lib/gwallet";
 
@@ -93,8 +93,13 @@ describe("plantillas", () => {
     expect(cancellationText("A", "B", c.startsAt, c.timezone, "b")).toContain("fue cancelada");
     expect(withBase("x {{BASE}}/c/1", "https://h")).toBe("x https://h/c/1");
     expect(plainText("*hola* x")).toBe("hola x");
-    expect(appBaseUrl({ VERCEL_ENV: "preview", VERCEL_BRANCH_URL: "a.vercel.app" })).toBe("https://a.vercel.app");
+    expect(appBaseUrl({ VERCEL_ENV: "preview", VERCEL_BRANCH_URL: "barber-saas-git-preview-lippsyts-projects.vercel.app", VERCEL_URL: "barber-saas-abc.vercel.app" })).toBe(CANONICAL_BASE);
+    expect(appBaseUrl({})).toBe(CANONICAL_BASE);
     expect(appBaseUrl({ APP_BASE_URL: "https://z.com/" })).toBe("https://z.com");
+    expect(appBaseUrl({ APP_BASE_URL: "https://barber-saas-git-preview-lippsyts-projects.vercel.app" })).toBe(CANONICAL_BASE);
+    expect(isPreviewHost(CANONICAL_BASE)).toBe(false);
+    expect(withBase("Reserva aquí: https://barber-saas-git-preview-lippsyts-projects.vercel.app/lumos", CANONICAL_BASE)).toBe(`Reserva aquí: ${CANONICAL_BASE}/lumos`);
+    expect(withBase("Si quieres, reserva otra: /lumos", CANONICAL_BASE)).toBe(`Si quieres, reserva otra: ${CANONICAL_BASE}/lumos`);
   });
   it("sender: reemplaza {{BASE}} y manda tarjeta como imagen en la confirmación", async () => {
     const sent: { kind: string; caption?: string; text?: string }[] = [];
