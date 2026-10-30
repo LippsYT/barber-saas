@@ -70,16 +70,16 @@ export default function Agenda() {
   return (
     <main>
       <div className="mb-5 flex items-end justify-between gap-3">
-        <div><div className="eyebrow">{isToday ? "Hoy" : "Agenda"}</div><h1 className="font-display text-3xl font-semibold capitalize">{dayLabel}</h1></div>
+        <div><div className="eyebrow">{isToday ? "Hoy" : "Agenda"}</div><h1 className="font-display text-3xl font-semibold first-letter:uppercase">{dayLabel}</h1></div>
         <div className="flex items-center gap-1">
           <button aria-label="Día anterior" className="btn2 h-10 w-10 p-0" onClick={() => setDay(addDays(day, -1))}><span className="sr-only">‹</span><ChevronLeft className="h-4 w-4" /></button>
-          <button className="btn2 h-10 w-10 p-0" onClick={() => setDay(addDays(day, 1))}>›</button>
+          <button aria-label="Día siguiente" className="btn2 h-10 w-10 p-0" onClick={() => setDay(addDays(day, 1))}>›</button>
         </div>
       </div>
       <div className="mb-5 grid grid-cols-3 gap-3">
         <div className="card"><div className="text-xs text-muted-foreground">Citas</div><div className="stat">{live.length}</div></div>
         <div className="card"><div className="text-xs text-muted-foreground">Cobradas</div><div className="stat">{shown.filter((a) => paid.has(a.id)).length}</div></div>
-        <div className="card bg-ink text-cream"><div className="text-xs text-cream/60">Ingreso esperado</div><div className="stat truncate text-2xl text-gold-300 md:text-3xl">{formatMoney(expected, biz.currency)}</div></div>
+        <div className="card bg-ink text-cream"><div className="text-xs text-cream/60">Ingreso esperado</div><div className="stat text-lg leading-none text-gold-300 sm:text-2xl md:text-3xl">{formatMoney(expected, biz.currency)}</div></div>
       </div>
       <div className="mb-4 flex items-center gap-2"><input type="date" className="inp py-2" value={day} onChange={(e) => setDay(e.target.value)} /></div>
       {role !== "barber" && <div className="mb-4 flex gap-2 overflow-x-auto pb-1">

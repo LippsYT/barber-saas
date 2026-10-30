@@ -54,7 +54,7 @@ export default function Caja() {
           <div className="mt-2 text-sm text-cream/60">Fondo {formatMoney(calc!.opening_float, biz.currency)} · {calc!.lines.length} conceptos · abierta {new Date(sess.opened_at).toLocaleTimeString("es-CO", { timeZone: biz.timezone, hour: "numeric", minute: "2-digit" })}</div>
         </div>
         <div className="card space-y-1">
-          <div className="text-sm text-muted-foreground">Abierta {new Date(sess.opened_at).toLocaleString("es-CO", { timeZone: biz.timezone })}</div>
+          <div className="text-sm text-muted-foreground">Abierta {new Date(sess.opened_at).toLocaleString("es-CO", { timeZone: biz.timezone, dateStyle: "short", timeStyle: "short" })}</div>
           <div className="font-mono text-sm">
             <div className="flex justify-between"><span>Fondo inicial</span><span>{formatMoney(calc!.opening_float, biz.currency)}</span></div>
             {calc!.lines.map((l) => <div key={l.label} className="flex justify-between"><span>{l.label}</span><span>{formatSigned(l.amount, biz.currency)}</span></div>)}

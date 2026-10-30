@@ -27,7 +27,7 @@ export default function Onboarding() {
         <div><label className="lbl">Tu nombre</label><input className="inp" required value={me} onChange={(e) => setMe(e.target.value)} /></div>
         <div><label className="lbl">País</label><select className="inp" value={tz} onChange={(e) => setTz(Number(e.target.value))}>{TZ.map((t, i) => <option key={i} value={i}>{t[1]}</option>)}</select></div>
         <label className="flex items-center gap-2"><input type="checkbox" checked={bookable} onChange={(e) => setBookable(e.target.checked)} /> Yo también atiendo clientes</label>
-        <button className="btn w-full" disabled={busy}>Crear</button>
+        <button className="btn-gold w-full" disabled={busy}>{busy ? "Creando…" : "Crear barbería"}</button>
         {err && <p className="text-sm text-red-600">{err}</p>}
       </form>
     </main>

@@ -37,7 +37,7 @@ export default function Login() {
       <form onSubmit={submit} className="space-y-3">
         <div><label className="lbl">Correo</label><input className="inp" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <div><label className="lbl">Contraseña</label><input className="inp" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-        <button className="btn w-full" disabled={busy}>{busy ? "..." : signup ? "Crear cuenta" : "Entrar"}</button>
+        <button className="btn-gold w-full" disabled={busy}>{busy ? "Un momento…" : signup ? "Crear cuenta" : "Entrar"}</button>
         {msg && <p className="text-sm text-red-600">{msg}</p>}
         <button type="button" className="text-sm underline" onClick={() => setSignup(!signup)}>
           {signup ? "Ya tengo cuenta" : "Soy nuevo / me invitaron: crear cuenta"}

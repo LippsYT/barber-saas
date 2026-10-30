@@ -10,19 +10,46 @@
     --accent: 39 50% 57%; --accent-foreground: 30 15% 7%;
     --destructive: 0 70% 45%; --border: 36 22% 85%; --ring: 39 50% 57%; --radius: 0.85rem;
   }
+  html { scroll-behavior: smooth; }
   body { @apply bg-background text-foreground font-sans antialiased; }
   h1, h2, h3 { @apply tracking-tight; }
+  ::selection { background: #c9a35c; color: #0e0c0a; }
+  :focus-visible { outline: 2px solid #c9a35c; outline-offset: 3px; }
 }
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-medium text-primary-foreground shadow-sm transition hover:bg-ink-700 disabled:opacity-50 active:scale-[.98]; }
-  .btn-gold { @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gold px-5 py-3 font-semibold text-ink shadow-sm transition hover:bg-gold-400 active:scale-[.98]; }
-  .btn2 { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium transition hover:bg-muted; }
-  .inp { @apply w-full rounded-lg border border-border bg-card px-3 py-3 text-base outline-none transition focus:border-gold focus:ring-2 focus:ring-gold/30; }
-  .card { @apply rounded-xl border border-border/70 bg-card p-4 shadow-soft; }
+  .btn { @apply relative isolate inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary px-4 py-3 font-medium text-primary-foreground shadow-sm transition duration-200 hover:bg-ink-700 disabled:opacity-50 active:scale-[.98]; }
+  .btn-gold { @apply relative isolate inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-gold px-5 py-3 font-semibold text-ink shadow-[0_10px_30px_rgba(201,163,92,.28)] transition duration-200 hover:bg-gold-400 disabled:opacity-50 active:scale-[.98]; background-image: linear-gradient(180deg, #e8d7a4, #c9a35c 48%, #b08a45); }
+  .btn::after, .btn-gold::after { content: ""; pointer-events: none; position: absolute; inset: 0; z-index: 1; mix-blend-mode: soft-light; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.7) 48%, transparent 64%); transform: translateX(-130%); transition: transform .7s ease; }
+  .btn-gold:hover { background-image: linear-gradient(180deg, #f4e7c2, #d4b56e 46%, #c9a35c); }
+  .btn2 { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium shadow-sm transition duration-200 hover:-translate-y-px hover:border-gold/60 hover:bg-muted active:scale-[.98]; }
+  .inp { @apply w-full rounded-lg border border-border bg-card px-3 py-3 text-base outline-none transition duration-200 focus:border-gold focus:ring-2 focus:ring-gold/30; }
+  .card { @apply rounded-2xl border border-border/70 bg-card p-4 shadow-soft transition duration-300; }
   .lbl { @apply mb-1 block text-sm font-medium text-muted-foreground; }
-  .h1 { @apply mb-4 font-display text-3xl font-semibold; }
-  .chip { @apply rounded-full border border-border px-3 py-2 text-sm transition hover:border-gold; }
-  .chip-on { @apply border-ink bg-ink text-cream; }
+  .h1 { @apply relative mb-5 font-display text-3xl font-semibold; }
+  .h1::after { content: ""; display: block; margin-top: .55rem; height: 2px; width: 2.5rem; border-radius: 999px; background: linear-gradient(90deg, #c9a35c, transparent); }
+  .chip { @apply rounded-full border border-border px-3 py-2 text-sm transition duration-200 hover:-translate-y-px hover:border-gold active:scale-[.98]; }
+  .chip-on { @apply border-ink bg-ink text-cream shadow-sm; }
   .stat { @apply font-display text-3xl font-semibold tabular-nums; }
   .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.18em] text-gold-600; }
+}
+@layer utilities {
+  .grain { position: relative; }
+  .grain::after { content: ""; pointer-events: none; position: absolute; inset: 0; opacity: .18; mix-blend-mode: overlay; background-image: radial-gradient(rgba(255,255,255,.55) .6px, transparent .6px); background-size: 3px 3px; }
+  .ticker-track { display: flex; width: max-content; animation: ticker 38s linear infinite; }
+  .phone-float { animation: floaty 6.5s ease-in-out infinite; }
+  .rise { animation: rise .7s cubic-bezier(.22,1,.36,1) both; }
+  .app-canvas { background: radial-gradient(900px 420px at 100% -10%, rgba(201,163,92,.14), transparent 55%), radial-gradient(640px 320px at -10% 0%, rgba(14,12,10,.04), transparent 50%), hsl(var(--background)); }
+}
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (hover: hover) {
+  .btn:hover::after, .btn-gold:hover::after { transform: translateX(130%); }
+  .card:hover { border-color: rgba(201,163,92,.45); box-shadow: 0 14px 34px rgba(20,16,10,.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .ticker-track, .phone-float, .rise { animation: none; }
+  .btn::after, .btn-gold::after { display: none; }
+  .card:hover, .btn2:hover, .chip:hover { transform: none; }
 }
