@@ -6,8 +6,8 @@ declare bid uuid; mid uuid; sid uuid;
 begin
   if exists(select 1 from businesses where slug = 'house-davidson') then return; end if;
   insert into businesses(name, slug, timezone, currency, country, phone, address, settings)
-  values ('House Davidson', 'house-davidson', 'America/Guayaquil', 'USD', 'EC', '0968467113', 'avenida reales tamarindo y Joaquín Ramírez, Portoviejo',
-          '{"slot_step_min":15,"min_notice_min":60,"max_advance_days":90}'::jsonb) returning id into bid;
+  values ('House Davidson', 'house-davidson', 'America/Guayaquil', 'USD', 'EC', null, 'avenida reales tamarindo y Joaquín Ramírez, Portoviejo',
+          '{"slot_step_min":10,"min_notice_min":60,"max_advance_days":90}'::jsonb) returning id into bid;
   insert into services(business_id, name, description, duration_min, price, sort_order) values (bid, 'servicio premium', 'Corte de cabello personalizado, exfoliación con vapor caliente para abrir poros ,frío para sellar y loción premium, tratamiento facial con limpieza profunda, mascarilla e hidratación, masaje relajante de cuello, hombros y cabeza, lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar la experiencia.', 60, 2000, 0);
   insert into services(business_id, name, description, duration_min, price, sort_order) values (bid, 'servicio vip', 'Corte de cabello personalizado, exfoliación con vapor para abrir poros y frío para sellar, diseño de barba  y loción premium, tratamiento facial con limpieza profunda, mascarilla e hidratación, masaje relajante de cuello, hombros y cabeza,masaje ocular para desinflamar las ojera , parches hidratantes,lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar la experiencia.', 70, 2400, 1);
   insert into services(business_id, name, description, duration_min, price, sort_order) values (bid, 'servicio oro', 'Corte de cabello, exfoliación suave, masaje relajante de cabeza, cuello y hombros, diseño de barba, lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar la experiencia.', 45, 1400, 2);

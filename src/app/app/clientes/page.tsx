@@ -3,6 +3,12 @@ import { useEffect, useState } from "react";
 import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
 import { formatMoney } from "@/lib/money";
+import { MessageCircle } from "lucide-react";
+
+function waHref(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return digits ? `https://wa.me/${digits}` : "";
+}
 
 export default function Clientes() {
   const { biz } = useApp();
@@ -34,7 +40,7 @@ export default function Clientes() {
       <button className="btn2 mb-3" onClick={() => setSel(null)}>← Clientes</button>
       <div className="card space-y-2">
         <div className="text-lg font-bold">{sel.full_name}</div>
-        <div className="text-sm">{sel.phone ? <a className="underline" href={`https://wa.me/${sel.phone}`}>WhatsApp {sel.phone}</a> : "Sin teléfono"}</div>
+        <div className="flex items-center justify-between gap-2 text-sm">{sel.phone ? <span>{sel.phone}</span> : <span>Sin teléfono</span>}{sel.phone && <a className="grid h-10 w-10 place-items-center rounded-full bg-[#25D366] text-white" href={waHref(sel.phone)} target="_blank" rel="noreferrer" aria-label={`WhatsApp a ${sel.full_name}`}><MessageCircle className="h-5 w-5" /></a>}</div>
         <textarea className="inp" placeholder="Notas (ej. degradado bajo, alérgico a…)" value={sel.notes ?? ""} onChange={(e) => setSel({ ...sel, notes: e.target.value })} />
         <button className="btn2" onClick={saveNotes}>Guardar notas</button>
       </div>
@@ -46,7 +52,7 @@ export default function Clientes() {
   );
   return (
     <main>
-      <h1 className="h1">Clientes</h1>
+      <div className="mb-3 flex items-end justify-between"><h1 className="display text-4xl">Clientes</h1><span className="pill bg-[#D6FF4A]">{list.length}</span></div>
       <input className="inp mb-3" placeholder="Buscar por nombre o teléfono" value={q} onChange={(e) => setQ(e.target.value)} />
       <form onSubmit={add} className="card mb-4 flex flex-col gap-2 sm:flex-row">
         <input className="inp" required placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
@@ -54,7 +60,13 @@ export default function Clientes() {
         <button className="btn">Agregar</button>
       </form>
       {err && <p className="text-sm text-red-600">{err}</p>}
-      <ul className="space-y-2">{list.map((c) => <li key={c.id}><button className="card w-full text-left" onClick={() => open(c)}><div className="font-display text-lg font-semibold">{c.full_name}</div><div className="text-sm text-muted-foreground">{c.phone}</div></button></li>)}</ul>
+      <ul className="space-y-2">{list.map((c) => <li key={c.id} className="card flex items-center gap-3">
+        <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => open(c)}>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#2F5BFF] font-display text-lg font-extrabold text-white">{(c.full_name || "?").slice(0, 1).toUpperCase()}</span>
+          <span className="min-w-0"><span className="block truncate font-semibold">{c.full_name}</span><span className="block text-sm text-ink/50">{c.phone || "Sin teléfono"}</span></span>
+        </button>
+        {c.phone && <a className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#25D366] text-white" href={waHref(c.phone)} target="_blank" rel="noreferrer" aria-label={`WhatsApp a ${c.full_name}`}><MessageCircle className="h-5 w-5" /></a>}
+      </li>)}</ul>
     </main>
   );
 }

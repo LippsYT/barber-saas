@@ -1,31 +1,23 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Scissors } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
+import { Chispa } from "@/components/brand/Mascot";
 
 export function AuthShell({ kicker, title, children }: { kicker: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-ink text-cream md:grid md:grid-cols-2">
-      <div className="relative hidden overflow-hidden md:block">
-        <Image src="/img/chair.jpg" alt="" fill className="object-cover opacity-55" sizes="50vw" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/25" />
+    <div className="min-h-screen bg-ink text-white md:grid md:grid-cols-2">
+      <div className="paper-blue relative hidden overflow-hidden md:block">
         <div className="relative flex h-full flex-col justify-between p-12">
-          <Link href="/" className="flex w-fit items-center gap-2 font-display text-2xl">
-            <Scissors className="h-5 w-5 text-gold" />
-            Barbería<span className="text-gold">.</span>
-          </Link>
+          <Link href="/"><Logo light /></Link>
+          <Chispa pose="run" className="w-56" />
           <div>
-            <div className="eyebrow text-gold">{kicker}</div>
-            <p className="mt-4 max-w-md font-display text-5xl font-semibold leading-[1.05]">{title}</p>
+            <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-white/70">{kicker}</div>
+            <p className="mt-3 max-w-md font-display text-6xl font-extrabold uppercase leading-[0.88]">{title}</p>
           </div>
         </div>
       </div>
-      <div className="relative flex min-h-screen flex-col justify-center px-4 py-10">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(201,163,92,.2),transparent_55%)]" />
-        <Link href="/" className="relative mx-auto mb-8 flex w-fit items-center gap-2 font-display text-xl md:hidden">
-          <Scissors className="h-5 w-5 text-gold" />
-          Barbería<span className="text-gold">.</span>
-        </Link>
-        <div className="rise relative mx-auto w-full max-w-md rounded-3xl border border-white/10 bg-cream-100 p-6 text-ink shadow-2xl md:p-8">{children}</div>
+      <div className="relative flex min-h-screen flex-col justify-center bg-[#F4F1E8] px-4 py-10 text-ink">
+        <Link href="/" className="relative mx-auto mb-8 md:hidden"><Logo /></Link>
+        <div className="relative mx-auto w-full max-w-md rounded-[2rem] bg-white p-6 shadow-soft md:p-8">{children}</div>
       </div>
     </div>
   );

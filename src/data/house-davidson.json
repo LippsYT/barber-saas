@@ -1,0 +1,285 @@
+[
+ {
+  "name": "servicio premium",
+  "description": "Corte de cabello personalizado, exfoliación con vapor caliente para abrir poros ,frío para sellar y loción premium, tratamiento facial con limpieza profunda, mascarilla e hidratación, masaje relajante de cuello, hombros y cabeza, lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar la experiencia.",
+  "duration_min": 60,
+  "price_usd": 20,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 0,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio vip",
+  "description": "Corte de cabello personalizado, exfoliación con vapor para abrir poros y frío para sellar, diseño de barba  y loción premium, tratamiento facial con limpieza profunda, mascarilla e hidratación, masaje relajante de cuello, hombros y cabeza,masaje ocular para desinflamar las ojera , parches hidratantes,lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar la experiencia.",
+  "duration_min": 70,
+  "price_usd": 24,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 1,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio oro",
+  "description": "Corte de cabello, exfoliación suave, masaje relajante de cabeza, cuello y hombros, diseño de barba, lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar la experiencia.",
+  "duration_min": 45,
+  "price_usd": 14,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 2,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio plata",
+  "description": "Corte de cabello, perfilado de barba con precisión, lavado con shampoo premium , peinado profesional y bebida de cortesía para cerrar el servicio.",
+  "duration_min": 40,
+  "price_usd": 12,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 3,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio platinium",
+  "description": "Corte de cabello, exfoliación suave, masaje relajante de hombro , cabeza y cuello, lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar el servicio.",
+  "duration_min": 40,
+  "price_usd": 10,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 4,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio básico",
+  "description": "Corte de cabello, lavado con shampoo premium, peinado profesional y bebida de cortesía para cerrar el servicio",
+  "duration_min": 30,
+  "price_usd": 8,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 5,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "Servicio juvenil",
+  "description": "Corte de cabello, lavado con shampoo suave, peinado profesional y bebida de cortesía.(niños de 7 a 15 años )",
+  "duration_min": 30,
+  "price_usd": 7,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 6,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio kids",
+  "description": "Corte de cabello, lavado con shampoo suave, peinado profesional y bebida de cortesía.(niños de 0 a 7 años )",
+  "duration_min": 30,
+  "price_usd": 6,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 7,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio barba platinium",
+  "description": "Exfoliación facial, masaje relajante, perfilado de barba con precisión y bebida de cortesía.",
+  "duration_min": 35,
+  "price_usd": 7,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 8,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio facial vip",
+  "description": "Limpieza profunda del rostro con espuma purificante para eliminar impurezas y grasa, exfoliación suave para renovar la piel, mascarilla negra detox para limpiar poros y retirar puntos negros, velo de colágeno para hidratar y revitalizar, vapor frío para cerrar poros, masaje ocular para reducir cansancio y masaje relajante en cuello, hombros y cabeza para liberar tensión y completar una experiencia premium.",
+  "duration_min": 30,
+  "price_usd": 10,
+  "type_price": "Fijo",
+  "category": "servicos adicionales",
+  "order": 9,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "yuleizi Pacheco",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "depilación nasal",
+  "description": "depilación nasal",
+  "duration_min": 10,
+  "price_usd": 3,
+  "type_price": "Precio a partir de",
+  "category": "servicos adicionales",
+  "order": 10,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "yuleizi Pacheco",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "cubrimiento de canas",
+  "description": "",
+  "duration_min": 15,
+  "price_usd": 4,
+  "type_price": "Fijo",
+  "category": "servicos adicionales",
+  "order": 11,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "yuleizi Pacheco",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio de cejas ",
+  "description": "perfilado de cejas ",
+  "duration_min": 5,
+  "price_usd": 2,
+  "type_price": "Fijo",
+  "category": "servicos adicionales",
+  "order": 12,
+  "staff": [
+   "Kevin Álvarez",
+   "Andrés Alava",
+   "yuleizi Pacheco",
+   "Ricardo Salazar",
+   "Eduardo Pachay"
+  ]
+ },
+ {
+  "name": "servicio de uñas vip",
+  "description": "Manicure y pedicure profesional, tratamiento de manos y pies con productos especializados, exfoliación suave, hidratación profunda, masaje relajante para liberar tensión y acabado impecable para una experiencia premium.",
+  "duration_min": 60,
+  "price_usd": 10,
+  "type_price": "Fijo",
+  "category": "spa de uñas",
+  "order": 13,
+  "staff": [
+   "yuleizi Pacheco"
+  ]
+ },
+ {
+  "name": "Servicio uñas   Premium",
+  "description": "Servicio profesional de manicure, cuidado de uñas, limpieza, aplicación de productos especializados, hidratación profunda y final pulido para un acabado premium.",
+  "duration_min": 40,
+  "price_usd": 6,
+  "type_price": "Fijo",
+  "category": "spa de uñas",
+  "order": 14,
+  "staff": [
+   "yuleizi Pacheco"
+  ]
+ },
+ {
+  "name": "servicio de pedicura premium",
+  "description": "Servicio profesional de pedicure, cuidado de uñas, limpieza de pies, tratamiento con productos especializados, hidratación profunda y final pulido para un acabado premium.",
+  "duration_min": 30,
+  "price_usd": 6,
+  "type_price": "Fijo",
+  "category": "spa de uñas",
+  "order": 15,
+  "staff": [
+   "yuleizi Pacheco"
+  ]
+ },
+ {
+  "name": "servicios de trenzas",
+  "description": "trenzas africanas",
+  "duration_min": 45,
+  "price_usd": 8,
+  "type_price": "Precio a partir de",
+  "category": "Barberia",
+  "order": 16,
+  "staff": [
+   "yuleizi Pacheco"
+  ]
+ },
+ {
+  "name": "servicio de ondulaciones permanente",
+  "description": "semi ondulaciones , odulaciones permanentes + corte de cabello",
+  "duration_min": 180,
+  "price_usd": 50,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 17,
+  "staff": [
+   "Andrés Alava"
+  ]
+ },
+ {
+  "name": "servicios tinturados rayitos",
+  "description": "tinturado de mechas + corte de cabello ",
+  "duration_min": 180,
+  "price_usd": 40,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 18,
+  "staff": [
+   "Andrés Alava"
+  ]
+ },
+ {
+  "name": "servicio de tinturado ",
+  "description": "tinturado de cabello +corte de cabello ",
+  "duration_min": 300,
+  "price_usd": 50,
+  "type_price": "Fijo",
+  "category": "Barberia",
+  "order": 19,
+  "staff": [
+   "Andrés Alava"
+  ]
+ }
+]

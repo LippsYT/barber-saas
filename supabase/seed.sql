@@ -24,7 +24,7 @@ begin
   if exists (select 1 from businesses where slug = 'demo') then return; end if;
   perform set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
   perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
-  bid := public.create_business('Barbería Demo', 'demo', 'Felipe (dueño)', 'America/Bogota', 'COP', true);
+  bid := public.create_business('Barbería Demo', 'demo', 'Felipe (dueño)', 'America/Bogota', 'USD', true);
 
   insert into services (business_id, name, duration_min, price) values
     (bid, 'Corte clásico', 30, 25000), (bid, 'Barba', 20, 15000), (bid, 'Corte + barba', 50, 35000);
