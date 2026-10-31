@@ -16,6 +16,15 @@ export default function Cobro() {
   const [discount, setDiscount] = useState("0"); const [tip, setTip] = useState("0");
   const [pays, setPays] = useState<{ method: string; amount: string }[]>([{ method: "cash", amount: "" }]);
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [done, setDone] = useState<any>(null);
+  // Métodos activados en Pagos y gastos (por defecto todos).
+  const [off, setOff] = useState<string[]>([]);
+  const methods = METHODS.filter((m) => !off.includes(m[0]));
+  useEffect(() => { sb().from("businesses").select("settings").eq("id", biz.id).single().then(({ data }) => {
+    const pm = ((data?.settings as { payment_methods?: Record<string, boolean> } | null)?.payment_methods) ?? {};
+    const disabled = Object.keys(pm).filter((k) => pm[k] === false);
+    setOff(disabled);
+    setPays((p) => p.map((x) => (disabled.includes(x.method) ? { ...x, method: METHODS.find((m) => !disabled.includes(m[0]))?.[0] ?? x.method } : x)));
+  }); }, []);
   useEffect(() => { (async () => {
     const [{ data: m }, { data: s }] = await Promise.all([
       sb().from("memberships").select("id, display_name").eq("business_id", biz.id).eq("is_bookable", true).eq("active", true).order("display_name"),
@@ -77,7 +86,7 @@ export default function Cobro() {
       <div className="card text-lg font-bold">Total: {formatMoney(total, biz.currency)}</div>
       <div className="card space-y-2"><div className="font-display text-lg font-semibold">¿Cómo paga?</div>
         {pays.map((p, i) => (<div key={i} className="flex gap-2">
-          <select className="inp" value={p.method} onChange={(e) => setPays(pays.map((x, j) => (j === i ? { ...x, method: e.target.value } : x)))}>{METHODS.map((m) => <option key={m[0]} value={m[0]}>{m[1]}</option>)}</select>
+          <select className="inp" value={p.method} onChange={(e) => setPays(pays.map((x, j) => (j === i ? { ...x, method: e.target.value } : x)))}>{methods.map((m) => <option key={m[0]} value={m[0]}>{m[1]}</option>)}</select>
           {!single && <input className="inp" type="number" placeholder="Monto" value={p.amount} onChange={(e) => setPays(pays.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))} />}
         </div>))}
         {single ? <button className="text-sm underline" onClick={() => setPays([{ method: pays[0].method, amount: (total / 100).toFixed(2) }, { method: "card", amount: "0" }])}>Dividir pago</button>

@@ -16,6 +16,8 @@ export function sb(): SupabaseClient {
 /** Traduce códigos de error de las RPC a español claro. */
 const ERR: Record<string, string> = {
   forbidden: "No tienes permiso para esta acción.",
+  cancel_too_late: "Ya no se puede cancelar online: llama a la barbería.",
+  bad_setting: "Ese valor no es válido.",
   slug_taken: "Ese enlace ya está en uso, prueba otro.",
   slot_taken: "Ese horario acaba de ocuparse. Elige otro.",
   payments_mismatch: "Los pagos no suman el total a cobrar.",

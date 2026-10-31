@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { sb } from "@/lib/supabase";
 import { AppCtx, type Ctx } from "@/components/ctx";
-import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, Scissors, UserCog, LogOut, MessageCircle, Link2, Gift, Clock, CreditCard, type LucideIcon } from "lucide-react";
+import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, LogOut, Settings, type LucideIcon } from "lucide-react";
+import { applySavedTheme } from "@/components/app/ThemeToggle";
 import { Logo } from "@/components/brand/Logo";
 import { TabBar } from "@/components/app/TabBar";
 import { Splash } from "@/components/app/Splash";
@@ -18,6 +19,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [ctx, setCtx] = useState<Ctx | null>(null); const [more, setMore] = useState(false); const [entered, setEntered] = useState(false);
   useEffect(() => setMore(false), [path]);
   useEffect(() => setEntered(true), []);
+  // Tema claro/oscuro guardado; al salir de /app se quita para no afectar las páginas públicas.
+  useEffect(() => { applySavedTheme(); return () => document.documentElement.classList.remove("app-dark"); }, []);
   useEffect(() => { (async () => {
     const { data: u } = await sb().auth.getUser();
     if (!u.user) return router.replace("/login");
@@ -33,16 +36,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ["/app", "Inicio", true, CalendarDays], ["/app/agenda", "Agenda", true, CalendarDays], ["/app/cobro", "Cobrar", true, Wallet], ["/app/caja", "Caja", ctx.canCash, Calculator],
     ["/app/reportes", ctx.role === "barber" ? "Mis comisiones" : "Reportes", ctx.role !== "receptionist", BarChart3],
     ["/app/clientes", "Clientes", true, Users], ["/app/libro", "Libro", ctx.isManager, BookOpen],
-    ["/app/servicios", "Servicios", ctx.isManager, Scissors], ["/app/equipo", "Equipo", ctx.isManager, UserCog],
-    ["/app/horario", "Horario", ctx.isManager, Clock],
-    ["/app/whatsapp", "WhatsApp", ctx.isManager, MessageCircle],
-    ["/app/pulselink", "Pulse Link", ctx.isManager, Link2],
-    ["/app/referidos", "Referidos", ctx.isManager, Gift],
-    ["/app/suscripcion", "Suscripción", ctx.role === "owner", CreditCard],
+    ["/app/ajustes", "Ajustes", ctx.isManager, Settings],
   ];
   const items = nav.filter((n) => n[2]);
   const logout = async () => { await sb().auth.signOut(); router.replace("/login"); };
-  const active = (h: string) => path === h;
+  // Las pantallas de configuración cuelgan de Ajustes: el ítem sigue marcado mientras estás en ellas.
+  const SETTINGS = ["servicios", "equipo", "horario", "whatsapp", "pulselink", "referidos", "suscripcion", "mensajes", "reglas", "perfil", "inventario", "finanzas", "compartir"];
+  const active = (h: string) => path === h || (h === "/app/ajustes" && SETTINGS.some((s) => path === `/app/${s}`));
   return (
     <><Splash ready />
     <AppCtx.Provider value={ctx}>

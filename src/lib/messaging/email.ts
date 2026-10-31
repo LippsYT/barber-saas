@@ -1,7 +1,13 @@
 /** Email (confirmación y cancelación). Brevo si hay BREVO_API_KEY; si no Resend (RESEND_API_KEY); si no, mock. */
 import { sendPolicyFor } from "./allowlist";
 
-export interface EmailMessage { to: string; subject: string; text: string; html?: string; ics?: string }
+export interface EmailAttachment { filename: string; content: string /* base64 */; contentType: string }
+export interface EmailMessage { to: string; subject: string; text: string; html?: string; ics?: string; attachments?: EmailAttachment[] }
+
+/** Adjuntos (.ics de la cita + los que pida quien envía) en la forma de cada proveedor. */
+function allAttachments(m: EmailMessage): EmailAttachment[] {
+  return [...(m.ics ? [{ filename: "cita.ics", content: Buffer.from(m.ics).toString("base64"), contentType: "text/calendar" }] : []), ...(m.attachments ?? [])];
+}
 export interface EmailProvider { readonly id: "brevo" | "resend" | "mock"; send(m: EmailMessage): Promise<{ id: string }> }
 
 export function createResendProvider(apiKey: string, from: string, fetchImpl: typeof fetch = fetch): EmailProvider {
@@ -13,7 +19,7 @@ export function createResendProvider(apiKey: string, from: string, fetchImpl: ty
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           from, to: [m.to], subject: m.subject, text: m.text, html: m.html,
-          attachments: m.ics ? [{ filename: "cita.ics", content: Buffer.from(m.ics).toString("base64"), content_type: "text/calendar" }] : undefined,
+          attachments: allAttachments(m).length ? allAttachments(m).map((a) => ({ filename: a.filename, content: a.content, content_type: a.contentType })) : undefined,
         }),
       });
       const j = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
@@ -41,7 +47,7 @@ export function createBrevoProvider(apiKey: string, from: string, fetchImpl: typ
         body: JSON.stringify({
           sender, to: [{ email: m.to }], subject: m.subject, textContent: m.text,
           ...(m.html ? { htmlContent: m.html } : {}),
-          ...(m.ics ? { attachment: [{ name: "cita.ics", content: Buffer.from(m.ics).toString("base64") }] } : {}),
+          ...(allAttachments(m).length ? { attachment: allAttachments(m).map((a) => ({ name: a.filename, content: a.content })) } : {}),
         }),
       });
       const j = (await res.json().catch(() => ({}))) as { messageId?: string; message?: string };

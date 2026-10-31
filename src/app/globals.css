@@ -85,3 +85,18 @@
   .ticker-track, .phone-float, .rise { animation: none; }
   .card:hover, .btn2:hover, .chip:hover { transform: none; }
 }
+/* Tema oscuro de la app (/app): se activa con la clase app-dark en <html> (ver ThemeToggle). */
+.app-dark { color-scheme: dark;
+  --background: 224 39% 6%; --foreground: 210 20% 96%; --card: 224 28% 11%; --card-foreground: 210 20% 96%;
+  --muted: 224 25% 16%; --muted-foreground: 220 12% 68%; --border: 224 20% 20%; }
+.app-dark .app-canvas { background: radial-gradient(900px 420px at 100% -10%, rgba(47,91,255,.22), transparent 55%), #070B14; }
+.app-dark .text-ink { color: hsl(210 20% 96%); }
+.app-dark [class*="text-ink/"] { color: rgba(226,232,244,.62); }
+.app-dark .bg-white { background-color: hsl(224 28% 14%); }
+.app-dark [class*="bg-ink/["] { background-color: rgba(255,255,255,.07); }
+.app-dark .bg-ink { background-color: #10182A; }
+.app-dark [class*="border-black/"] { border-color: rgba(255,255,255,.12); }
+.app-dark [class*="bg-[#F4F1E8]"] { background-color: rgba(7,11,20,.9); }
+.app-dark [class*="bg-[#D6FF4A]"], .app-dark [class*="bg-[#D6FF4A]"] .text-ink { color: #070B14; }
+.app-dark .text-\[\#1D3FD6\], .app-dark .text-\[\#1E3FCC\], .app-dark .eyebrow { color: #8FA8FF; }
+.app-dark .text-\[\#0B5B2B\] { color: #7DE29D; }

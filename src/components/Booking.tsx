@@ -164,6 +164,11 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
               </div>))}
           </section>
 
+          {(b.gallery?.length ?? 0) > 0 && <section className="mt-4 rounded-[1.7rem] bg-[#F4F1E8] p-4 text-ink">
+            <h2 className="display mb-3 text-3xl">Portafolio</h2>
+            <div className="hscroll flex gap-2 pb-1">{b.gallery!.map((u) => <img key={u} src={u} alt="" loading="lazy" className="h-44 w-36 shrink-0 rounded-2xl object-cover" />)}</div>
+          </section>}
+
           {(b.hours?.length ?? 0) > 0 && (() => {
             const today = localDate(Date.now(), tz);
             const sd = b.special_days?.find((d) => d.on_date === today);
