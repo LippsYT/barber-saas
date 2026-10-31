@@ -163,6 +163,24 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
                 </ul>
               </div>))}
           </section>
+
+          {(b.hours?.length ?? 0) > 0 && (() => {
+            const today = localDate(Date.now(), tz);
+            const sd = b.special_days?.find((d) => d.on_date === today);
+            const h = b.hours!.find((x) => x.weekday === weekdayOf(today));
+            const open = sd ? !sd.closed : h?.is_open;
+            const label = sd ? (sd.closed ? "Cerrado hoy" : `Hoy ${sd.start}–${sd.end}`) : h?.is_open ? `Abierto hoy ${h.start}–${h.end}` : "Cerrado hoy";
+            const full = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            return (
+              <section className="mt-4 rounded-[1.7rem] bg-[#F4F1E8] p-4 text-ink">
+                <div className="mb-3 flex items-center justify-between gap-2"><h2 className="display text-3xl">Horario</h2>
+                  <span className={`pill ${open ? "bg-[#D6FF4A] text-ink" : "bg-ink/10 text-ink/70"}`}>{label}</span></div>
+                <ul className="space-y-1 text-sm">{[1, 2, 3, 4, 5, 6, 0].map((w) => { const x = b.hours!.find((y) => y.weekday === w); return (
+                  <li key={w} className="flex justify-between gap-3 border-b border-black/5 py-1.5 last:border-0"><span className="font-semibold">{full[w]}</span><span className="tabular-nums text-ink/70">{x?.is_open ? `${x.start} – ${x.end}` : "Cerrado"}</span></li>); })}</ul>
+                {(b.special_days?.length ?? 0) > 0 && <div className="mt-3 space-y-1 text-xs text-ink/60">{b.special_days!.slice(0, 4).map((d) => (
+                  <p key={d.on_date}><b>{new Date(d.on_date + "T12:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" })}:</b> {d.closed ? "cerrado" : `${d.start}–${d.end}`}{d.note ? ` · ${d.note}` : ""}</p>))}</div>}
+              </section>);
+          })()}
         </div>
         <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#2F5BFF] to-transparent px-4 pb-[calc(1rem+var(--sab))] pt-6"><div className="mx-auto max-w-lg"><button className="btn-gold w-full" onClick={() => setStarted(true)}>Reservar cita</button></div></div>
       </main>

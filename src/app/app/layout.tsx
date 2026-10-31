@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { sb } from "@/lib/supabase";
 import { AppCtx, type Ctx } from "@/components/ctx";
-import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, Scissors, UserCog, LogOut, MessageCircle, Link2, Gift, type LucideIcon } from "lucide-react";
+import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, Scissors, UserCog, LogOut, MessageCircle, Link2, Gift, Clock, type LucideIcon } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { TabBar } from "@/components/app/TabBar";
 import { Splash } from "@/components/app/Splash";
@@ -34,6 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ["/app/reportes", ctx.role === "barber" ? "Mis comisiones" : "Reportes", ctx.role !== "receptionist", BarChart3],
     ["/app/clientes", "Clientes", true, Users], ["/app/libro", "Libro", ctx.isManager, BookOpen],
     ["/app/servicios", "Servicios", ctx.isManager, Scissors], ["/app/equipo", "Equipo", ctx.isManager, UserCog],
+    ["/app/horario", "Horario", ctx.isManager, Clock],
     ["/app/whatsapp", "WhatsApp", ctx.isManager, MessageCircle],
     ["/app/pulselink", "Pulse Link", ctx.isManager, Link2],
     ["/app/referidos", "Referidos", ctx.isManager, Gift],
