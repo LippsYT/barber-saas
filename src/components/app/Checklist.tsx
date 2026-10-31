@@ -28,7 +28,7 @@ export function Checklist({ bizId, slug, name }: { bizId: string; slug: string; 
   }, [bizId, sharedKey]);
 
   async function share() {
-    const url = `${appBaseUrl()}/${slug}`;
+    const url = `${appBaseUrl()}/l/${slug}`;
     try {
       if (navigator.share) await navigator.share({ title: name, text: `Reserva en ${name}`, url });
       else { await navigator.clipboard.writeText(url); setNote("Link copiado. Pégalo en WhatsApp o Instagram."); }
@@ -39,7 +39,7 @@ export function Checklist({ bizId, slug, name }: { bizId: string; slug: string; 
   if (services === null || wa === null) return null;
   const steps: Step[] = [
     { id: "account", label: "Crea tu cuenta", done: true },
-    { id: "share", label: "Comparte tu link de reservas", done: shared, action: share, cta: "Compartir" },
+    { id: "share", label: "Comparte tu Pulse Link", done: shared, action: share, cta: "Compartir" },
     { id: "wa", label: "Conecta tu WhatsApp", done: wa, href: "/app/whatsapp", cta: "Conectar" },
     { id: "service", label: "Agrega tu primer servicio", done: services > 0, href: "/app/servicios", cta: "Agregar" },
   ];
