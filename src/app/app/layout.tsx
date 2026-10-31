@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { sb } from "@/lib/supabase";
 import { AppCtx, type Ctx } from "@/components/ctx";
-import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, Scissors, UserCog, LogOut, MessageCircle, Link2, Gift, Clock, type LucideIcon } from "lucide-react";
+import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, Scissors, UserCog, LogOut, MessageCircle, Link2, Gift, Clock, CreditCard, type LucideIcon } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { TabBar } from "@/components/app/TabBar";
 import { Splash } from "@/components/app/Splash";
@@ -38,6 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ["/app/whatsapp", "WhatsApp", ctx.isManager, MessageCircle],
     ["/app/pulselink", "Pulse Link", ctx.isManager, Link2],
     ["/app/referidos", "Referidos", ctx.isManager, Gift],
+    ["/app/suscripcion", "Suscripción", ctx.role === "owner", CreditCard],
   ];
   const items = nav.filter((n) => n[2]);
   const logout = async () => { await sb().auth.signOut(); router.replace("/login"); };
