@@ -18,7 +18,7 @@ Quedó apagada en producción y en preview:
 - La app no depende de `@vercel/toolbar`. No había que quitar ese paquete.
 
 ## Links de WhatsApp
-La base canónica es `https://barber-saas-chi-five.vercel.app` (`APP_BASE_URL`, o ese valor si la variable falta). Ver `MESSAGING.md`. Migraciones pendientes de aplicar en Supabase (0020 links, 0022 fotos del equipo, 0023 Pulse Link): pegar `supabase/APPLY_PENDING.sql` en el SQL editor. **Sin 0022 no se pueden subir fotos y sin 0023 `/l/<slug>` da 404.**
+La base canónica es `https://barber-saas-chi-five.vercel.app` (`APP_BASE_URL`, o ese valor si la variable falta). Ver `MESSAGING.md`. Las migraciones se aplican a mano en el SQL editor de Supabase, de una en una y en orden. Aplicadas hasta la 0027 (0020 links, 0022 fotos, 0023 Pulse Link, 0024 horario, 0025 suscripción Stripe, 0026 ajustes y mensajes, 0027 perfil/inventario/informe). Para activar los cobros hacen falta `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` y `STRIPE_PRICE_ID` (ver `.env.example`); para el informe por email, `BREVO_API_KEY` + `EMAIL_FROM` o `RESEND_API_KEY`.
 
 ## Setup
 1. `npm install`
