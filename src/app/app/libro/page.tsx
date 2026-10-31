@@ -17,6 +17,21 @@ const ACC: { label: string; hint: string; accs: LedgerAccount[]; icon: typeof Wa
   { label: "Debido al personal", hint: "Comisiones y sueldos por pagar", accs: ["payable_staff"], icon: Users },
 ];
 
+/** Resume el período en frases simples, solo con los asientos cargados. */
+function explain(entries: any[], currency: string) {
+  if (!entries.length) return "Todavía no hay movimientos en este período. Cuando cobres o anotes un gasto, aquí te cuento qué pasó con tu dinero.";
+  const sum = (f: (e: any) => boolean) => entries.filter(f).reduce((a, e) => a + e.direction * e.amount, 0);
+  const money = (e: any) => MONEY_ACCOUNTS.includes(e.account);
+  const sales = sum((e) => money(e) && e.type === "sale_income"), tips = sum((e) => money(e) && e.type === "tip_income");
+  const out = -sum((e) => money(e) && (e.type === "expense" || e.type === "cash_out")), voids = entries.filter((e) => e.type === "void_reversal").length;
+  const owed = balance(entries.filter((e) => e.account === "payable_staff"), ["payable_staff"] as LedgerAccount[]);
+  const parts = [`Entraron ${formatMoney(sales, currency)} por ventas${tips > 0 ? ` y ${formatMoney(tips, currency)} de propinas` : ""}.`];
+  parts.push(out > 0 ? `Salieron ${formatMoney(out, currency)} entre gastos y retiros.` : "No hubo gastos ni retiros.");
+  if (owed > 0) parts.push(`Debes al personal ${formatMoney(owed, currency)} en comisiones y sueldos.`);
+  if (voids > 0) parts.push(`Hubo ${voids} anulación${voids > 1 ? "es" : ""}; cada una quedó con su asiento inverso.`);
+  return parts.join(" ");
+}
+
 export default function Libro() {
   const { biz } = useApp();
   const [kind, setKind] = useState<PeriodKind>("day"); const [anchor, setAnchor] = useState(localDate(Date.now(), biz.timezone));
@@ -40,6 +55,11 @@ export default function Libro() {
       <h1 className="h1">Libro de caja</h1>
       <p className="mb-4 text-sm text-ink/60">Cada venta, gasto y retiro queda anotado. Nada se borra ni se edita: si algo se anula, se agrega un asiento inverso.</p>
       <PeriodPicker kind={kind} setKind={setKind} anchor={anchor} setAnchor={setAnchor} tz={biz.timezone} />
+
+      <section aria-label="Resumen" className="mb-3 rounded-[1.7rem] border border-[#2F5BFF]/25 bg-[#2F5BFF]/[0.07] p-4">
+        <div className="text-[11px] font-extrabold uppercase tracking-widest text-[#1D3FD6]">Pulso te explica</div>
+        <p className="mt-1 text-sm leading-relaxed text-ink/80">{explain(entries, biz.currency)}</p>
+      </section>
 
       <section className="mb-3 overflow-hidden rounded-[1.7rem] bg-ink p-4 text-white">
         <div className="text-[11px] font-extrabold uppercase tracking-widest text-[#D6FF4A]">Dinero del negocio</div>

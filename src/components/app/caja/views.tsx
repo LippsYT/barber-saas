@@ -1,5 +1,6 @@
 "use client";
 import { formatMoney, formatSigned } from "@/lib/money";
+import { AmountField } from "@/components/ui/NumPad";
 import { METHOD_ES, differenceText, shareOf, type MethodSplit, type SettleLine } from "@/lib/caja";
 
 export function CajaTabs({ tab, onTab, showAdvances }: { tab: string; onTab: (t: string) => void; showAdvances: boolean }) {
@@ -110,7 +111,7 @@ export function CajaHoyView({
             <div className="font-semibold">Anotar un gasto</div>
             <input className="inp" required placeholder="Qué se pagó" value={expense.concept} onChange={(e) => onExpense({ concept: e.target.value })} />
             <div className="grid grid-cols-2 gap-2">
-              <input className="inp" required inputMode="decimal" placeholder="Monto" value={expense.amount} onChange={(e) => onExpense({ amount: e.target.value })} />
+              <AmountField required label="Monto del gasto" placeholder="Monto" value={expense.amount} onChange={(v) => onExpense({ amount: v })} />
               <select className="inp" value={expense.method} onChange={(e) => onExpense({ method: e.target.value })}>
                 <option value="cash">Efectivo</option>
                 <option value="transfer">Transferencia</option>

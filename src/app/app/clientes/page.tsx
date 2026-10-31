@@ -10,7 +10,7 @@ import { toE164, waHref } from "@/lib/phone";
 export default function Clientes() {
   const { biz } = useApp();
   const [q, setQ] = useState(""); const [list, setList] = useState<any[]>([]); const [sel, setSel] = useState<any>(null); const [hist, setHist] = useState<any>({ appts: [], sales: [] });
-  const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [err, setErr] = useState("");
+  const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [err, setErr] = useState(""); const [note, setNote] = useState("");
   const load = async () => {
     let r = sb().from("clients").select("*").eq("business_id", biz.id).order("full_name").limit(100);
     if (q) r = r.or(`full_name.ilike.%${q.replace(/[%,()]/g, "")}%,phone.ilike.%${q.replace(/\D/g, "").replace(/^0+/, "")}%`);
@@ -22,6 +22,19 @@ export default function Clientes() {
     const { error } = await sb().from("clients").insert({ business_id: biz.id, full_name: name.trim(), phone: toE164(phone) });
     if (error) return setErr(error.message.includes("clients_phone_uniq") ? "Ya existe un cliente con ese teléfono." : errEs(error));
     setName(""); setPhone(""); load();
+  }
+  /** Contact Picker API: Chrome en Android. En iPhone/escritorio no existe y se avisa. */
+  async function importContacts() {
+    setErr(""); setNote("");
+    const api = (navigator as any).contacts;
+    if (!api?.select) return setErr("Tu navegador no permite importar contactos. Funciona en Chrome para Android; en iPhone, agrégalos uno a uno.");
+    try {
+      const picked: { name?: string[]; tel?: string[] }[] = await api.select(["name", "tel"], { multiple: true });
+      const rows = picked.filter((c) => c.name?.[0] && c.tel?.[0]).map((c) => ({ business_id: biz.id, full_name: c.name![0].trim(), phone: toE164(c.tel![0]) }));
+      let ok = 0, dup = 0;
+      for (const r of rows) { const { error } = await sb().from("clients").insert(r); if (error) dup++; else ok++; }
+      setNote(`${ok} contacto${ok === 1 ? "" : "s"} importado${ok === 1 ? "" : "s"}${dup ? `; ${dup} ya existían o no se pudieron guardar` : ""}.`); load();
+    } catch { /* el usuario canceló */ }
   }
   async function open(c: any) {
     setSel(c);
@@ -65,6 +78,8 @@ export default function Clientes() {
         <input className="inp" placeholder="WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} />
         <button className="btn">Agregar</button>
       </form>
+      <button type="button" className="btn2 mb-4 w-full" onClick={importContacts}>Importar desde mis contactos</button>
+      {note && <p role="status" className="mb-2 text-sm text-[#0B5B2B]">{note}</p>}
       {err && <p className="text-sm text-red-600">{err}</p>}
       <ul className="space-y-2">{list.map((c) => <li key={c.id} className="card flex items-center gap-3">
         <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => open(c)}>
