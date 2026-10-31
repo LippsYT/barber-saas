@@ -8,6 +8,7 @@ import { AppCtx, type Ctx } from "@/components/ctx";
 import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, Scissors, UserCog, LogOut, MessageCircle, type LucideIcon } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { TabBar } from "@/components/app/TabBar";
+import { Splash } from "@/components/app/Splash";
 
 const ROLE_ES = { owner: "Dueño", admin: "Admin", receptionist: "Recepción", barber: "Barbero" } as const;
 
@@ -27,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const role = m.role;
     setCtx({ biz: m.business, role, memberId: m.id, userId: u.user.id, isManager: role === "owner" || role === "admin", canCash: role !== "barber" });
   })(); }, [router]);
-  if (!ctx) return <div className="grid min-h-screen place-items-center bg-ink text-white"><Logo light /></div>;
+  if (!ctx) return <><Splash ready={false} /><div className="grid min-h-screen place-items-center bg-ink text-white"><Logo light /></div></>;
   const nav: [string, string, boolean, LucideIcon][] = [
     ["/app", "Inicio", true, CalendarDays], ["/app/agenda", "Agenda", true, CalendarDays], ["/app/cobro", "Cobrar", true, Wallet], ["/app/caja", "Caja", ctx.canCash, Calculator],
     ["/app/reportes", ctx.role === "barber" ? "Mis comisiones" : "Reportes", ctx.role !== "receptionist", BarChart3],
@@ -39,6 +40,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const logout = async () => { await sb().auth.signOut(); router.replace("/login"); };
   const active = (h: string) => path === h;
   return (
+    <><Splash ready />
     <AppCtx.Provider value={ctx}>
       <div className="app-canvas min-h-screen md:flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-black/5 bg-ink p-5 text-white md:flex">
@@ -71,6 +73,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>}
       </div>
-    </AppCtx.Provider>
+    </AppCtx.Provider></>
   );
 }

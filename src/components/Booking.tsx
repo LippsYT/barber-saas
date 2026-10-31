@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/money";
 import { addDays, localDate, localTime, localToUtcMs, weekdayOf } from "@/lib/time";
 import { MapPin, Clock, ChevronLeft } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { Avatar } from "@/components/ui/avatar";
 import type { Catalog, CatalogBarber } from "@/lib/catalog";
 
 export type { Catalog, CatalogBarber, CatalogService } from "@/lib/catalog";
@@ -148,8 +149,8 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
 
             {current === "barbero" && <div className="grid grid-cols-2 gap-2">{barbers.map((b) => (
               <button key={b.id} className={`rounded-2xl border p-3 text-left font-bold ${member === b.id ? "border-[#2F5BFF] bg-[#2F5BFF] text-white" : "border-black/10 bg-white"}`} onClick={() => { setMember(b.id); setSvc([]); }}>
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-[#D6FF4A] text-sm text-ink">{b.name.slice(0, 1)}</span>
-                <span className="mt-2 block">{b.name}</span>
+                <Avatar name={b.name} src={b.avatar_url} size={64} className={member === b.id ? "!ring-[#D6FF4A]" : ""} />
+                <span className="mt-2 block break-words">{b.name}</span>
               </button>
             ))}
               {!barbers.length && <p className="col-span-2 text-sm text-ink/60">Nadie trabaja este día. Elige otra fecha.</p>}

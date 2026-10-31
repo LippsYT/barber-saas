@@ -18,7 +18,7 @@ Quedó apagada en producción y en preview:
 - La app no depende de `@vercel/toolbar`. No había que quitar ese paquete.
 
 ## Links de WhatsApp
-La base canónica es `https://barber-saas-lippsyts-projects.vercel.app` (`APP_BASE_URL`, o ese valor si la variable falta). Ver `MESSAGING.md`. La migración `supabase/migrations/0020_canonical_base_url.sql` corrige filas y `_app_base_url()`; **no está aplicada**.
+La base canónica es `https://barber-saas-chi-five.vercel.app` (`APP_BASE_URL`, o ese valor si la variable falta). Ver `MESSAGING.md`. La migración `supabase/migrations/0020_canonical_base_url.sql` corrige filas y `_app_base_url()`; **no está aplicada**.
 
 ## Setup
 1. `npm install`

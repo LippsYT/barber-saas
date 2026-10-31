@@ -6,6 +6,7 @@ import { useApp } from "@/components/ctx";
 import { addDays, localDate, localTime, localToUtcMs } from "@/lib/time";
 import { formatMoney } from "@/lib/money";
 import { HomeDash, type HomeFigure, type HomeVisit } from "@/components/app/HomeDash";
+import { Checklist } from "@/components/app/Checklist";
 
 function monthBounds(today: string) {
   const start = today.slice(0, 8) + "01";
@@ -71,6 +72,7 @@ export default function Inicio() {
   if (!ready) return <p className="text-sm text-ink/50">Cargando tus cifras…</p>;
   return (
     <>
+      {(role === "owner" || role === "admin") && <div className="mb-4"><Checklist bizId={biz.id} slug={biz.slug} name={biz.name} /></div>}
       <HomeDash greeting={greeting} business={biz.name} monthLabel={monthLabel} salesCents={salesCents} daysLeft={daysLeft} delta={delta} figures={figures} visits={visits} />
       <div className="mt-4 flex flex-wrap gap-2">{links.map((l) => <Link key={l.href} href={l.href} className="pill bg-white shadow-sm">{l.label}</Link>)}</div>
     </>

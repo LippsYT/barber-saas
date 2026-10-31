@@ -23,13 +23,24 @@ export function WhatsAppConnect({
   const [linkState, setLinkState] = useState<string>("");
   const [issuedAt, setIssuedAt] = useState<number>(0);
   const [now, setNow] = useState<number>(Date.now());
+  const [connectedPhone, setConnectedPhone] = useState("");
+  const [checking, setChecking] = useState(!preview);
 
   async function call(body: Record<string, string>) {
     const res = await fetch("/api/whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "No se pudo conectar.");
-    return data as { status?: string; pairingCode?: string; demo?: boolean; state?: string };
+    return data as { status?: string; pairingCode?: string; demo?: boolean; state?: string; phone?: string };
   }
+
+  // Al abrir: si el negocio ya está conectado, lo mostramos. No llamamos onConnected (no avanza el onboarding solo).
+  useEffect(() => {
+    if (preview) return;
+    call({ action: "status" })
+      .then((d) => { if (d.status === "connected") { setConnectedPhone(d.phone ?? ""); setDemo(Boolean(d.demo)); setStage("done"); } })
+      .catch(() => { /* sin estado: se muestra el formulario */ })
+      .finally(() => setChecking(false));
+  }, []);
 
   async function start(e?: React.FormEvent) {
     e?.preventDefault();
@@ -73,10 +84,15 @@ export function WhatsAppConnect({
 
   if (stage === "done" || preview?.stage === "done") {
     return (
-      <div className="rounded-[1.7rem] bg-[#07362a] p-5 text-center text-white">
+      <div role="status" className="rounded-[1.7rem] bg-[#07362a] p-5 text-center text-white">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#25D366]"><MessageCircle /></div>
+        <div className="mx-auto mt-3 inline-flex items-center gap-2 rounded-full bg-[#25D366]/20 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-[#7CF0A6]">
+          <span className="h-2 w-2 rounded-full bg-[#25D366] shadow-[0_0_0_4px_rgba(37,211,102,.25)]" /> Conectado
+        </div>
         <h2 className="mt-3 font-display text-3xl font-extrabold uppercase">¡Listo!</h2>
-        <p className="mt-2 text-sm text-white/80">Tu WhatsApp quedó marcado como conectado{demo || preview?.demo ? " (modo demo)" : ""}.</p>
+        {connectedPhone && <p className="mt-1 font-mono text-sm text-white/90">+{connectedPhone}</p>}
+        <p className="mt-2 text-sm text-white/80">Tu WhatsApp está conectado. Las confirmaciones y recordatorios salen desde ahí{demo || preview?.demo ? " (modo demo: todavía no es un WhatsApp real)" : ""}.</p>
+        {!preview && <button className="mt-4 min-h-[44px] rounded-full border border-white/30 px-5 text-sm font-semibold" onClick={() => { setStage("form"); setCode(""); }}>Cambiar número</button>}
       </div>
     );
   }
@@ -119,6 +135,8 @@ export function WhatsAppConnect({
 
   return (
     <form onSubmit={start} className="space-y-3">
+      {checking ? <div className="inline-flex items-center gap-2 rounded-full bg-ink/5 px-3 py-1 text-xs font-bold text-ink/60">Revisando conexión…</div>
+        : <div role="status" className="inline-flex items-center gap-2 rounded-full bg-[#FFE8D6] px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-[#8A3B00]"><span className="h-2 w-2 rounded-full bg-[#F97316]" /> Sin conectar</div>}
       <h2 className="font-display text-3xl font-extrabold uppercase leading-none">Conecta tu WhatsApp</h2>
       <p className="text-sm text-ink/65">Escribe el número con código de país. Te damos un código de 8 caracteres para vincularlo, sin la API oficial de Meta.</p>
       <label className="lbl">Número de WhatsApp

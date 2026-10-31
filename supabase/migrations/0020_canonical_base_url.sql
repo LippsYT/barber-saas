@@ -1,5 +1,5 @@
 -- 0020: la URL de los mensajes es la de producción.
--- No aplica este archivo sola: hay que correrlo en Supabase (no se aplicó en este cambio).
+-- Aplicar en el SQL editor de Supabase (o con supabase db push).
 -- Los cuerpos nuevos siguen usando {{BASE}}; el sender lo cambia por APP_BASE_URL o por el alias de producción.
 -- Aquí se corrige lo ya guardado (hosts *.vercel.app de preview/rama) y _app_base_url() para que el vault
 -- no pueda devolver un deploy de preview.
@@ -8,7 +8,7 @@ create or replace function public._app_base_url() returns text
 language plpgsql stable security definer set search_path = public, vault as $$
 declare
   v text;
-  canonical text := 'https://barber-saas-lippsyts-projects.vercel.app';
+  canonical text := 'https://barber-saas-chi-five.vercel.app';
 begin
   select rtrim(decrypted_secret, '/') into v
   from vault.decrypted_secrets where name = 'app_base_url' limit 1;
@@ -30,7 +30,7 @@ set payload = jsonb_set(
   to_jsonb(regexp_replace(
     payload->>'body',
     'https?://barber-saas[a-zA-Z0-9.-]*\.vercel\.app',
-    'https://barber-saas-lippsyts-projects.vercel.app',
+    'https://barber-saas-chi-five.vercel.app',
     'gi'
   ))
 )
@@ -45,7 +45,7 @@ set payload = jsonb_set(
   to_jsonb(regexp_replace(
     payload->>'body',
     '((aquí|acá|otra):[[:space:]]*)/',
-    E'\\1https://barber-saas-lippsyts-projects.vercel.app/',
+    E'\\1https://barber-saas-chi-five.vercel.app/',
     'gi'
   ))
 )
@@ -64,8 +64,8 @@ begin
   from vault.decrypted_secrets where name = 'app_base_url' limit 1;
   if sid is not null
      and cur ~* 'barber-saas[a-z0-9.-]*\.vercel\.app'
-     and position('https://barber-saas-lippsyts-projects.vercel.app' in cur) = 0 then
-    perform vault.update_secret(sid, 'https://barber-saas-lippsyts-projects.vercel.app', 'app_base_url', 'Base pública de los links de WhatsApp');
+     and position('https://barber-saas-chi-five.vercel.app' in cur) = 0 then
+    perform vault.update_secret(sid, 'https://barber-saas-chi-five.vercel.app', 'app_base_url', 'Base pública de los links de WhatsApp');
   end if;
 exception when others then
   raise notice 'vault app_base_url no actualizado: %', sqlerrm;

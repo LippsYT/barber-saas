@@ -1,7 +1,7 @@
 /** Mismos textos que en SQL (0019). Sirven para la vista previa en Ajustes y para tests. {{BASE}} lo reemplaza el sender. */
 export const REACTIVATION_DEFAULT_DAYS = 25;
 /** URL pública de producción. Nunca usar VERCEL_URL ni la URL de una rama. */
-export const CANONICAL_BASE = "https://barber-saas-lippsyts-projects.vercel.app";
+export const CANONICAL_BASE = "https://barber-saas-chi-five.vercel.app";
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const first = (n: string) => n.trim().split(/\s+/)[0] ?? n;
@@ -40,7 +40,7 @@ function absolute(v: string) {
 export function isPreviewHost(url: string) {
   try {
     const host = new URL(absolute(url)).host;
-    return host.endsWith(".vercel.app") && host.startsWith("barber-saas") && host !== "barber-saas-lippsyts-projects.vercel.app";
+    return host.endsWith(".vercel.app") && host.startsWith("barber-saas") && host !== "barber-saas-chi-five.vercel.app";
   } catch { return false; }
 }
 /**

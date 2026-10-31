@@ -3,7 +3,7 @@ export interface CatalogService {
   price_kind?: string; duration_min: number; price: number;
 }
 export interface CatalogBarber {
-  id: string; name: string; slug: string; weekdays: number[];
+  id: string; name: string; slug: string; avatar_url?: string | null; weekdays: number[];
   services: { service_id: string; price: number; duration_min: number }[];
 }
 export interface Catalog {

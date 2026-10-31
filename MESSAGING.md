@@ -21,7 +21,7 @@ disponible en plan gratis). Solo hace la llamada si hay mensajes vencidos. Vault
 ## URL de los links
 Los cuerpos guardan el marcador `{{BASE}}`. Al enviar, el worker lo reemplaza con `APP_BASE_URL`
 (sin barra final). Si esa variable falta, o si apunta a un host `barber-saas-*.vercel.app` que no es el alias
-de producción, se usa `https://barber-saas-lippsyts-projects.vercel.app`. El sender no lee `VERCEL_URL`,
+de producción, se usa `https://barber-saas-chi-five.vercel.app`. El sender no lee `VERCEL_URL`,
 `VERCEL_BRANCH_URL` ni `VERCEL_PROJECT_PRODUCTION_URL`. Lo mismo vale para confirmación, recordatorios,
 cancelación, reactivación (job y botón) y para el link que queda dentro del .ics / Wallet.
 

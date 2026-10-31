@@ -85,11 +85,11 @@ describe("cola de mensajes", () => {
   it("0020: _app_base_url no devuelve un host de preview", async () => {
     expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://pulso.test");
     await db.exec("update vault.decrypted_secrets set decrypted_secret = 'https://barber-saas-git-preview-lippsyts-projects.vercel.app/' where name = 'app_base_url'");
-    expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://barber-saas-lippsyts-projects.vercel.app");
+    expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://barber-saas-chi-five.vercel.app");
     await db.exec("update vault.decrypted_secrets set decrypted_secret = '' where name = 'app_base_url'");
-    expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://barber-saas-lippsyts-projects.vercel.app");
-    const [rewritten] = await rows<{ t: string }>(db, `select regexp_replace('Reserva aquí: https://barber-saas-git-preview-lippsyts-projects.vercel.app/house', 'https?://barber-saas[a-zA-Z0-9.-]*\\.vercel\\.app', 'https://barber-saas-lippsyts-projects.vercel.app', 'gi') t`);
-    expect(rewritten.t).toBe("Reserva aquí: https://barber-saas-lippsyts-projects.vercel.app/house");
+    expect((await rows<{ u: string }>(db, "select _app_base_url() u"))[0].u).toBe("https://barber-saas-chi-five.vercel.app");
+    const [rewritten] = await rows<{ t: string }>(db, `select regexp_replace('Reserva aquí: https://barber-saas-git-preview-lippsyts-projects.vercel.app/house', 'https?://barber-saas[a-zA-Z0-9.-]*\\.vercel\\.app', 'https://barber-saas-chi-five.vercel.app', 'gi') t`);
+    expect(rewritten.t).toBe("Reserva aquí: https://barber-saas-chi-five.vercel.app/house");
     await db.exec("update vault.decrypted_secrets set decrypted_secret = 'https://pulso.test' where name = 'app_base_url'");
   });
 });
