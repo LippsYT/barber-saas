@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, ChevronDown, MessageCircle, Mic } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Chispa } from "@/components/brand/Mascot";
-import { Phone } from "@/components/brand/Phone";
+import { Depth, HeroShapes, Phone3D, Stage3D } from "./Scene3D";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -21,6 +21,21 @@ function Slide({ id, className, children }: { id: string; className: string; chi
     >
       <div className="mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-2">{children}</div>
     </motion.section>
+  );
+}
+
+function Line({ i, children }: { i: number; children: React.ReactNode }) {
+  const reduce = useReducedMotion();
+  if (reduce) return <>{children}</>;
+  return (
+    <motion.span
+      className="inline-block origin-bottom"
+      initial={{ opacity: 0, rotateX: -80, y: 30 }}
+      animate={{ opacity: 1, rotateX: 0, y: 0 }}
+      transition={{ duration: 0.7, ease, delay: 0.15 + i * 0.14 }}
+    >
+      {children}
+    </motion.span>
   );
 }
 
@@ -64,7 +79,9 @@ export function Landing() {
       <Slide id="inicio" className="paper-blue min-h-[100svh] text-white">
         <div>
           <Kicker n="01" label="Inicio" light />
-          <h1 className="display text-6xl sm:text-7xl md:text-8xl">Corta.<br />Cobra.<br /><span className="bg-[#D6FF4A] px-2 text-ink">Repite.</span></h1>
+          <h1 className="display text-6xl sm:text-7xl md:text-8xl" style={{ perspective: 800 }}>
+            <Line i={0}>Corta.</Line><br /><Line i={1}>Cobra.</Line><br /><Line i={2}><span className="bg-[#D6FF4A] px-2 text-ink">Repite.</span></Line>
+          </h1>
           <p className="mt-6 max-w-md text-lg text-white/85">La agenda, la caja y las reservas de tu barbería, en un solo pulso. En dólares. Desde el celular.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/login?modo=registro" className="btn-gold">Empieza hoy <ArrowRight className="h-4 w-4" /></Link>
@@ -72,9 +89,10 @@ export function Landing() {
           </div>
           <p className="mt-5 text-sm text-white/70">Sin permanencia · Precios en US$</p>
         </div>
-        <div className="relative">
-          <Chispa pose="run" className="absolute -left-6 bottom-6 z-20 w-36 sm:w-44" />
-          <Phone>
+        <Stage3D>
+          <HeroShapes />
+          <Depth z={80} float={10} className="absolute -left-6 bottom-6 z-20 w-36 sm:w-44"><Chispa pose="run" className="w-full" /></Depth>
+          <Phone3D>
             <div className="px-3 pt-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-ink/40">Buenas tardes</div>
               <div className="display text-2xl text-ink">Tus ventas</div>
@@ -88,9 +106,9 @@ export function Landing() {
                 <div className="rounded-xl bg-white p-2"><b>US$ 40</b><div className="text-ink/50">Ticket</div></div>
               </div>
             </div>
-          </Phone>
-          <div className="absolute right-0 top-8 z-20 grid h-20 w-20 place-items-center rounded-full bg-[#D6FF4A] text-center text-xs font-extrabold uppercase leading-tight text-ink shadow-lg">Tus<br />ventas</div>
-        </div>
+          </Phone3D>
+          <Depth z={110} float={8} delay={1} className="absolute right-0 top-8 z-20 grid h-20 w-20 place-items-center rounded-full bg-[#D6FF4A] text-center text-xs font-extrabold uppercase leading-tight text-ink shadow-lg">Tus<br />ventas</Depth>
+        </Stage3D>
       </Slide>
 
       <Slide id="reservas" className="paper min-h-[90svh]">
@@ -103,8 +121,8 @@ export function Landing() {
             <span className="pill bg-white">Sin cruces</span>
           </div>
         </div>
-        <div className="relative">
-          <Phone>
+        <Stage3D flip={-1}>
+          <Phone3D>
             <div className="px-3">
               <div className="display text-xl">Agenda</div>
               <div className="mt-2 flex gap-1 text-[10px] font-bold">
@@ -116,19 +134,19 @@ export function Landing() {
                 <div className="rounded-xl bg-[#FF5A7A] p-2 text-[11px] text-white"><b>12:00</b> Ricardo · kids</div>
               </div>
             </div>
-          </Phone>
-          <div className="absolute -right-1 bottom-8 z-20 w-40 rotate-3 rounded-2xl bg-[#9AD7FF] p-3 text-xs shadow-xl">
+          </Phone3D>
+          <Depth z={100} rotate={3} delay={1} className="absolute -right-1 bottom-8 z-20 w-40 rounded-2xl bg-[#9AD7FF] p-3 text-xs shadow-xl">
             <div className="font-extrabold">Mateo Ruiz</div>
             <div>09:00 – 09:45</div>
             <div className="text-ink/70">servicio oro</div>
-          </div>
-          <Chispa pose="stand" className="absolute -right-2 -top-6 z-20 w-28" />
-        </div>
+          </Depth>
+          <Depth z={70} className="absolute -right-2 -top-6 z-20 w-28"><Chispa pose="stand" className="w-full" /></Depth>
+        </Stage3D>
       </Slide>
 
       <Slide id="caja" className="paper min-h-[90svh]">
-        <div className="relative order-2 md:order-1">
-          <Phone>
+        <Stage3D className="order-2 md:order-1">
+          <Phone3D>
             <div className="px-3">
               <div className="display text-2xl">Caja</div>
               <div className="mt-3 rounded-2xl bg-white p-3 shadow">
@@ -138,12 +156,12 @@ export function Landing() {
                 <div className="mt-2 text-right text-[11px] font-bold text-[#2F5BFF]">Ver detalles</div>
               </div>
             </div>
-          </Phone>
-          <div className="absolute right-2 top-16 z-20 grid h-24 w-24 place-items-center rounded-full bg-ink text-center text-white shadow-xl">
+          </Phone3D>
+          <Depth z={110} delay={1} className="absolute right-2 top-16 z-20 grid h-24 w-24 place-items-center rounded-full bg-ink text-center text-white shadow-xl">
             <div><div className="text-lg font-extrabold text-[#D6FF4A]">+18%</div><div className="text-[10px] uppercase">vs semana</div></div>
-          </div>
-          <Chispa pose="point" className="absolute -bottom-4 left-0 z-20 w-32" />
-        </div>
+          </Depth>
+          <Depth z={70} className="absolute -bottom-4 left-0 z-20 w-32"><Chispa pose="point" className="w-full" /></Depth>
+        </Stage3D>
         <div className="order-1 md:order-2">
           <Kicker n="03" label="Caja" />
           <h2 className="display text-5xl sm:text-7xl">Caja clara.<br />Al <span className="bg-[#D6FF4A] px-2 text-ink">centavo.</span></h2>
@@ -158,8 +176,8 @@ export function Landing() {
           <p className="mt-5 max-w-md text-lg text-white/70">Nombre, WhatsApp y la historia de citas. Un botón abre el chat. Sin copiar números a mano.</p>
           <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#D6FF4A] px-4 py-2 text-sm font-extrabold text-ink">Un toque y abre WhatsApp</div>
         </div>
-        <div className="relative">
-          <Phone dark>
+        <Stage3D flip={-1}>
+          <Phone3D dark>
             <div className="px-3 text-white">
               <div className="display text-2xl">Clientes</div>
               <div className="mt-2 rounded-full bg-white/10 px-3 py-2 text-[11px] text-white/50">Buscar…</div>
@@ -171,9 +189,9 @@ export function Landing() {
                 </div>
               ))}
             </div>
-          </Phone>
-          <Chispa pose="heart" className="absolute -left-4 bottom-4 z-20 w-32" />
-        </div>
+          </Phone3D>
+          <Depth z={80} className="absolute -left-4 bottom-4 z-20 w-32"><Chispa pose="heart" className="w-full" /></Depth>
+        </Stage3D>
       </Slide>
 
       <Slide id="whatsapp" className="paper-dark min-h-[90svh] text-white">
@@ -186,19 +204,19 @@ export function Landing() {
             <span className="pill bg-[#25D366] text-white">WhatsApp</span>
           </div>
         </div>
-        <div className="relative">
-          <Phone dark>
+        <Stage3D>
+          <Phone3D dark>
             <div className="px-4 pt-8 text-center">
               <div className="text-xs uppercase tracking-widest text-white/50">Pulso</div>
               <p className="mt-6 font-display text-3xl font-extrabold uppercase leading-tight">Buenos días.<br />Aquí estoy, cuéntame.</p>
               <div className="mx-auto mt-8 w-14 rounded-full bg-white/10 py-3 text-[10px]">escuchando</div>
             </div>
-          </Phone>
-          <div className="absolute left-0 top-24 z-20 max-w-[220px] -rotate-2 rounded-2xl border border-white/10 bg-[#2a2150] p-3 text-sm shadow-2xl">
+          </Phone3D>
+          <Depth z={100} rotate={-2} delay={1} className="absolute left-0 top-24 z-20 max-w-[220px] rounded-2xl border border-white/10 bg-[#2a2150] p-3 text-sm shadow-2xl">
             Buenos días.<br /><span className="text-white/70">Tu cita de las 4 está lista.</span>
-          </div>
-          <Chispa pose="wave" className="absolute -left-2 bottom-0 z-20 w-32" />
-        </div>
+          </Depth>
+          <Depth z={70} className="absolute -left-2 bottom-0 z-20 w-32"><Chispa pose="wave" className="w-full" /></Depth>
+        </Stage3D>
       </Slide>
 
       <section id="precios" className="paper-blue px-5 py-20 text-white">
