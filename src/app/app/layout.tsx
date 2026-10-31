@@ -10,12 +10,15 @@ import { applySavedTheme } from "@/components/app/ThemeToggle";
 import { Logo } from "@/components/brand/Logo";
 import { TabBar } from "@/components/app/TabBar";
 import { Splash } from "@/components/app/Splash";
+import { Paywall } from "@/components/app/Paywall";
 
 const ROLE_ES = { owner: "Dueño", admin: "Admin", receptionist: "Recepción", barber: "Barbero" } as const;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter(); const path = usePathname();
   const reduce = useReducedMotion();
+  type Billing = { active: boolean; exempt: boolean; trial_ends_at: string; status: string };
+  const [billing, setBilling] = useState<Billing | null>(null);
   const [ctx, setCtx] = useState<Ctx | null>(null); const [more, setMore] = useState(false); const [entered, setEntered] = useState(false);
   useEffect(() => setMore(false), [path]);
   useEffect(() => setEntered(true), []);
@@ -29,6 +32,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const m = data?.[0] as { role: Ctx["role"]; id: string; business: Ctx["biz"] } | undefined;
     if (!m) return router.replace("/onboarding");
     const role = m.role;
+    // Si la consulta falla (por ejemplo la migración aún no está aplicada) no se bloquea a nadie.
+    const { data: bill } = await sb().rpc("my_billing");
+    if (bill) setBilling(bill as Billing);
     setCtx({ biz: m.business, role, memberId: m.id, userId: u.user.id, isManager: role === "owner" || role === "admin", canCash: role !== "barber" });
   })(); }, [router]);
   if (!ctx) return <><Splash ready={false} /><div className="grid min-h-screen place-items-center bg-ink text-white"><Logo light /></div></>;
@@ -39,6 +45,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ["/app/ajustes", "Ajustes", ctx.isManager, Settings],
   ];
   const items = nav.filter((n) => n[2]);
+  const blocked = billing !== null && !billing.active && !(ctx.role === "owner" && path === "/app/suscripcion");
+  const trialDays = billing && billing.active && !billing.exempt && !["active", "trialing", "past_due"].includes(billing.status)
+    ? Math.ceil((Date.parse(billing.trial_ends_at) - Date.now()) / 86400000) : null;
+  if (blocked) return <><Splash ready /><Paywall isOwner={ctx.role === "owner"} businessName={ctx.biz.name} onLogout={async () => { await sb().auth.signOut(); router.replace("/login"); }} /></>;
   const logout = async () => { await sb().auth.signOut(); router.replace("/login"); };
   // Las pantallas de configuración cuelgan de Ajustes: el ítem sigue marcado mientras estás en ellas.
   const SETTINGS = ["servicios", "equipo", "horario", "whatsapp", "pulselink", "referidos", "suscripcion", "mensajes", "reglas", "perfil", "inventario", "finanzas", "compartir"];
@@ -62,6 +72,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Logo className="text-xl" />
             <button className="text-sm font-bold text-ink/60" onClick={logout}>Salir</button>
           </header>
+          {trialDays !== null && trialDays <= 7 && ctx.role === "owner" && <Link href="/app/suscripcion" className="block bg-[#D6FF4A] px-4 py-2 text-center text-sm font-bold text-[#070B14]">
+            {trialDays > 0 ? `Te ${trialDays === 1 ? "queda 1 día" : `quedan ${trialDays} días`} de prueba · Activar suscripción` : "Tu prueba termina hoy · Activar suscripción"}</Link>}
           <div className="mx-auto max-w-3xl px-4 pb-app-nav pt-4 md:px-8 md:pb-12 md:pt-8">
             <motion.div key={path} initial={entered && reduce === false ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
               {children}
