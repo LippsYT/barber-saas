@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
-const KEY = "pulso:splash";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 /** Marca de Pulso: la caja azul aparece, la línea de pulso se dibuja y entra el nombre. */
@@ -24,18 +23,17 @@ export function SplashMark({ size = 96 }: { size?: number }) {
   );
 }
 
-/** Pantalla de entrada. Se ve una vez por sesión y solo cuando `ready` es verdadero. */
+/** Pantalla de entrada. Sale en cada apertura de la app (carga completa), no al navegar entre pantallas.
+ *  Dura lo mínimo para ver la animación y se va cuando la app ya cargó. Con "reducir movimiento" sale sin animar. */
 export function Splash({ ready }: { ready: boolean }) {
   const reduce = useReducedMotion();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(true);
+  const [minDone, setMinDone] = useState(false);
   useEffect(() => {
-    try { if (!sessionStorage.getItem(KEY)) { sessionStorage.setItem(KEY, "1"); if (!reduce) setShow(true); } } catch { /* sin storage: sin splash */ }
-  }, [reduce]);
-  useEffect(() => {
-    if (!show || !ready) return;
-    const t = setTimeout(() => setShow(false), 2000);
+    const t = setTimeout(() => setMinDone(true), reduce ? 900 : 1900);
     return () => clearTimeout(t);
-  }, [show, ready]);
+  }, [reduce]);
+  useEffect(() => { if (minDone && ready) setShow(false); }, [minDone, ready]);
   return (
     <AnimatePresence>
       {show && (
