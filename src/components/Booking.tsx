@@ -4,7 +4,8 @@ import { LazyMotion, domAnimation, m, useReducedMotion } from "framer-motion";
 import { sb, errEs } from "@/lib/supabase";
 import { formatMoney } from "@/lib/money";
 import { addDays, localDate, localTime, localToUtcMs, weekdayOf } from "@/lib/time";
-import { MapPin, Clock, ChevronLeft } from "lucide-react";
+import { MapPin, Clock, ChevronLeft, Users, MessageCircle } from "lucide-react";
+import { waHref } from "@/lib/phone";
 import { Logo } from "@/components/brand/Logo";
 import { Avatar } from "@/components/ui/avatar";
 import type { Catalog, CatalogBarber } from "@/lib/catalog";
@@ -32,6 +33,9 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const preview = Boolean(previewCatalog);
+  // Portada del negocio: solo en el enlace público genérico. Con barbero fijo, maqueta o cita precargada se entra directo.
+  const [started, setStarted] = useState(Boolean(previewCatalog || barberSlug || preset) || initialStep > 0);
+  const anyBarber = member === "any";
 
   useEffect(() => {
     if (previewCatalog) {
@@ -87,9 +91,17 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
       setSlots(list);
       return;
     }
-    sb().rpc("public_get_availability", { p_slug: slug, p_member: member, p_service_ids: svc, p_date: date }).then(({ data, error }) => {
+    sb().rpc("public_get_availability", { p_slug: slug, p_member: anyBarber ? null : member, p_service_ids: svc, p_date: date }).then(({ data, error }) => {
       if (error) setErr(errEs(error));
-      setSlots(data ?? []);
+      type S = { slot_start: string; member_id: string; member_name: string };
+      let list: S[] = data ?? [];
+      if (anyBarber) {
+        // Un horario por hora: se asigna el primer barbero libre.
+        const byStart = new Map<string, S>();
+        for (const s of list) if (!byStart.has(s.slot_start)) byStart.set(s.slot_start, s);
+        list = [...byStart.values()].sort((a, b) => a.slot_start.localeCompare(b.slot_start));
+      }
+      setSlots(list);
     });
   }, [date, member, svc.join(",")]);
 
@@ -113,6 +125,50 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
   if (err && !cat) return <main className="grid min-h-screen place-items-center bg-ink p-6 text-center text-white"><p className="display text-4xl">{err}</p></main>;
   if (!cat || !date) return <main className="grid min-h-screen place-items-center bg-ink text-white"><p className="display text-3xl">Abriendo la agenda…</p></main>;
 
+  if (!started) {
+    const b = cat.business;
+    const groups = [...new Set(cat.services.map((s) => s.category || ""))];
+    return (
+      <main className="paper-blue min-h-screen pb-[calc(6rem+var(--sab))] text-white">
+        <div className="mx-auto max-w-lg px-4 pt-[calc(1rem+var(--sat))]">
+          <div className="mb-4 flex items-center justify-between"><Logo light className="text-xl" /><span className="pill bg-white/15 text-white">Reserva online</span></div>
+          {b.cover_url && <img src={b.cover_url} alt="" className="mb-4 h-44 w-full rounded-3xl object-cover" />}
+          <h1 className="display break-words text-5xl">{b.name}</h1>
+          {b.address && <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.name} ${b.address}`)}`} target="_blank" rel="noreferrer" className="mt-2 flex items-start gap-1.5 text-sm text-white/80 underline-offset-2 hover:underline"><MapPin className="mt-0.5 h-4 w-4 shrink-0" />{b.address}</a>}
+          <div className="mt-4 flex gap-2">
+            <button className="btn-gold min-w-0 flex-1" onClick={() => setStarted(true)}>Reservar cita</button>
+            {b.phone && <a href={waHref(b.phone)} target="_blank" rel="noreferrer" aria-label="Escribir por WhatsApp" className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#25D366] text-white"><MessageCircle className="h-6 w-6" /></a>}
+          </div>
+
+          {cat.barbers.length > 0 && <section className="mt-6 rounded-[1.7rem] bg-[#F4F1E8] p-4 text-ink">
+            <h2 className="display mb-3 text-3xl">Equipo</h2>
+            <div className="hscroll flex gap-3 pb-1">{cat.barbers.map((x) => (
+              <button key={x.id} className="flex w-20 shrink-0 flex-col items-center gap-1.5 text-center" onClick={() => setStarted(true)}>
+                <Avatar name={x.name} src={x.avatar_url} size={64} />
+                <span className="w-full break-words text-xs font-bold leading-tight">{x.name}</span>
+              </button>))}
+            </div>
+          </section>}
+
+          <section className="mt-4 rounded-[1.7rem] bg-[#F4F1E8] p-4 text-ink">
+            <h2 className="display mb-3 text-3xl">Servicios</h2>
+            {groups.map((g) => (
+              <div key={g || "otros"} className="mb-3 last:mb-0">
+                {g && <div className="mb-1.5 text-[11px] font-extrabold uppercase tracking-widest text-ink/50">{g}</div>}
+                <ul className="space-y-2">{cat.services.filter((s) => (s.category || "") === g).map((s) => (
+                  <li key={s.id} className="flex items-start justify-between gap-3 rounded-2xl border border-black/10 bg-white p-3">
+                    <div className="min-w-0"><div className="font-bold">{s.name}</div>{s.description && <div className="mt-0.5 line-clamp-2 text-xs text-ink/60">{s.description}</div>}<div className="mt-1 flex items-center gap-1 text-xs text-ink/50"><Clock className="h-3 w-3" />{s.duration_min} min</div></div>
+                    <div className="shrink-0 whitespace-nowrap text-sm font-extrabold">{s.price_kind === "from" ? "Desde " : ""}{formatMoney(Number(s.price), cur)}</div>
+                  </li>))}
+                </ul>
+              </div>))}
+          </section>
+        </div>
+        <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#2F5BFF] to-transparent px-4 pb-[calc(1rem+var(--sab))] pt-6"><div className="mx-auto max-w-lg"><button className="btn-gold w-full" onClick={() => setStarted(true)}>Reservar cita</button></div></div>
+      </main>
+    );
+  }
+
   const total = services.filter((s) => svc.includes(s.id)).reduce((a, s) => a + Number(s.price), 0);
   const canNext = current === "fecha" ? Boolean(date) : current === "barbero" ? Boolean(member) : current === "servicio" ? svc.length > 0 : current === "horario" ? Boolean(slot) : true;
 
@@ -125,7 +181,7 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
     <LazyMotion features={domAnimation} strict>
       <main className="paper-blue min-h-screen pb-[calc(2.5rem+var(--sab))] text-white">
         <header className="mx-auto flex max-w-lg items-center justify-between px-4 pb-2 pt-[calc(1rem+var(--sat))]">
-          <button aria-label="Atrás" className="grid h-10 w-10 place-items-center rounded-full bg-white/15" onClick={() => step === 0 ? history.back() : setStep(step - 1)}><ChevronLeft /></button>
+          <button aria-label="Atrás" className="grid h-10 w-10 place-items-center rounded-full bg-white/15" onClick={() => step > 0 ? setStep(step - 1) : (!preview && !barberSlug && !preset && initialStep === 0) ? setStarted(false) : history.back()}><ChevronLeft /></button>
           <Logo light className="text-xl" />
           <span className="text-xs font-extrabold">{step + 1}/{steps.length}</span>
         </header>
@@ -147,7 +203,12 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
               </button>
             ))}</div>}
 
-            {current === "barbero" && <div className="grid grid-cols-2 gap-2">{barbers.map((b) => (
+            {current === "barbero" && <div className="grid grid-cols-2 gap-2">
+              {barbers.length > 1 && <button className={`col-span-2 flex items-center gap-3 rounded-2xl border p-3 text-left ${anyBarber ? "border-[#2F5BFF] bg-[#2F5BFF] text-white" : "border-black/10 bg-white"}`} onClick={() => { setMember("any"); setSvc([]); }}>
+                <span className={`grid h-16 w-16 shrink-0 place-items-center rounded-full ${anyBarber ? "bg-[#D6FF4A] text-ink" : "bg-[#2F5BFF]/10 text-[#2F5BFF]"}`}><Users className="h-7 w-7" /></span>
+                <span className="min-w-0"><span className="block font-bold">Cualquiera disponible</span><span className={`block text-xs font-normal ${anyBarber ? "text-white/80" : "text-ink/60"}`}>Te asignamos el primer barbero libre en el horario que elijas.</span></span>
+              </button>}
+              {barbers.map((b) => (
               <button key={b.id} className={`rounded-2xl border p-3 text-left font-bold ${member === b.id ? "border-[#2F5BFF] bg-[#2F5BFF] text-white" : "border-black/10 bg-white"}`} onClick={() => { setMember(b.id); setSvc([]); }}>
                 <Avatar name={b.name} src={b.avatar_url} size={64} className={member === b.id ? "!ring-[#D6FF4A]" : ""} />
                 <span className="mt-2 block break-words">{b.name}</span>
