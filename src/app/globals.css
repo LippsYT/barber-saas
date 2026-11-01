@@ -121,3 +121,5 @@
 .app-dark .glass-pill { background: linear-gradient(160deg, rgba(47,91,255,.85), rgba(47,91,255,.55)); box-shadow: 0 6px 16px rgba(47,91,255,.4), inset 0 1px 0 rgba(255,255,255,.35); }
 .app-dark nav .glass-bar a:not([aria-current]) { color: rgba(255,255,255,.6); }
 .app-dark .glass-fab { color: #070B14; }
+/* En tema oscuro el botón + sigue siendo lima (la regla de la barra lo dejaba oscuro sobre oscuro). */
+.app-dark .glass-bar.glass-fab { background: linear-gradient(135deg, rgba(214,255,74,.95), rgba(190,235,50,.8)); border-color: rgba(255,255,255,.35); color: #070B14; box-shadow: 0 12px 28px rgba(214,255,74,.28), inset 0 1.5px 0 rgba(255,255,255,.55); }

@@ -9,7 +9,7 @@ import { STATUS_ES } from "@/lib/billing-ui";
 import { formatMoney } from "@/lib/money";
 import { ADDONS, BASE_FEATURES, BASE_PRICE, PLAN_NAME, monthlyTotal } from "@/lib/addons";
 
-const PANEL = "min-h-[70vh] space-y-3 rounded-[2rem] bg-[radial-gradient(120%_55%_at_100%_0%,rgba(47,91,255,.38),transparent_60%),#070B14] p-4 text-white";
+const PANEL = "min-h-[70vh] space-y-3 rounded-[2rem] bg-[#070B14] bg-[radial-gradient(120%_55%_at_100%_0%,rgba(47,91,255,.38),transparent_60%)] p-4 text-white";
 const CARD = "rounded-3xl bg-white/[0.06] p-4 ring-1 ring-white/10";
 const date = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" }) : "");
 

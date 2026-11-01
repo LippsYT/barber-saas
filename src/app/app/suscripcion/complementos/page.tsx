@@ -7,7 +7,7 @@ import { AddonSheet, ADDON_ICON } from "@/components/app/AddonSheet";
 import { formatMoney } from "@/lib/money";
 import { ADDONS, BASE_PRICE, PLAN_NAME, SOON, addonOf, addonsTotal, type AddonKey } from "@/lib/addons";
 
-const PANEL = "min-h-[70vh] rounded-[2rem] bg-[radial-gradient(120%_55%_at_100%_0%,rgba(47,91,255,.38),transparent_60%),#070B14] p-4 text-white";
+const PANEL = "min-h-[70vh] rounded-[2rem] bg-[#070B14] bg-[radial-gradient(120%_55%_at_100%_0%,rgba(47,91,255,.38),transparent_60%)] p-4 text-white";
 
 export default function Complementos() {
   const s = useSubscription();
