@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { formatMoney } from "@/lib/money";
-import { Chispa } from "@/components/brand/Mascot";
 
 export interface HomeFigure { label: string; value: string; hint?: string }
 export interface HomeVisit { id: string; time: string; title: string; who: string }
@@ -39,7 +38,8 @@ export function HomeDash({
                 : { pose: "wave" as const, text: "¡Buen mes! Cada cita cobrada suma a esta cifra." };
           return (
             <div className="mt-4 flex items-center gap-3 border-t border-black/5 pt-3">
-              <Chispa pose={tip.pose} className="pointer-events-none w-14 shrink-0" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/mascot/barbero.webp" alt="Chispa, el barbero de Pulso" width={288} height={438} className="pointer-events-none h-auto w-20 shrink-0" />
               <p className="rounded-2xl rounded-bl-sm bg-[#F4F1E8] px-3 py-2 text-sm font-semibold leading-snug text-ink/75">{tip.text}</p>
             </div>
           );
