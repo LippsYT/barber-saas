@@ -11,6 +11,10 @@ const team = teamOfDay(
   ],
   [{ member_id: "b", amount: 2000 }, { member_id: "c", amount: 1500 }],
   { c: "Camila Vera" },
+  [
+    { member_id: "a", name: "Servicio premium", qty: 3 }, { member_id: "a", name: "Servicio básico", qty: 2 }, { member_id: "a", name: "Servicio premium", qty: 1 },
+    { member_id: "a", name: "Servicio de cejas", qty: 4 }, { member_id: "b", name: "Servicio de ondulaciones permanente", qty: 1 },
+  ],
 );
 
 describe("equipo del día", () => {
@@ -18,6 +22,12 @@ describe("equipo del día", () => {
     const b = team.find((r) => r.id === "b")!;
     expect(b).toMatchObject({ commission: 5500, tips: 500, advances: 2000, owed: 4000 });
     expect(team.find((r) => r.id === "a")!.owed).toBe(11000);
+  });
+  it("cuenta cuántos servicios de cada tipo hizo cada uno, el más hecho primero", () => {
+    expect(team.find((r) => r.id === "a")!.items).toEqual([
+      { name: "Servicio de cejas", qty: 4 }, { name: "Servicio premium", qty: 4 }, { name: "Servicio básico", qty: 2 },
+    ]);
+    expect(team.find((r) => r.id === "c")!.items).toEqual([]);
   });
   it("quien solo pidió adelanto queda en negativo", () => {
     expect(team.find((r) => r.id === "c")).toMatchObject({ name: "Camila Vera", owed: -1500 });

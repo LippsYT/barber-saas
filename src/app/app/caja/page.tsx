@@ -99,17 +99,20 @@ export default function Caja() {
   const loadTeamOfDay = async (d: string) => {
     const from = new Date(localToUtcMs(d, "00:00", biz.timezone)).toISOString();
     const to = new Date(localToUtcMs(addDays(d, 1), "00:00", biz.timezone)).toISOString();
-    const [per, comm, adv, members] = await Promise.all([
+    const [per, comm, adv, members, sold] = await Promise.all([
       sb().rpc("caja_periodo", { p_business: biz.id, p_from: d, p_to: d }),
       sb().from("commission_entries").select("member_id, item_type, amount").eq("business_id", biz.id).gte("occurred_at", from).lt("occurred_at", to),
       sb().from("staff_advances").select("member_id, amount").eq("business_id", biz.id).gte("given_at", from).lt("given_at", to),
       sb().from("memberships").select("id, display_name").eq("business_id", biz.id),
+      sb().from("sale_items").select("member_id, name, qty, sales!inner(status, created_at)").eq("business_id", biz.id).eq("item_type", "service")
+        .eq("sales.status", "paid").gte("sales.created_at", from).lt("sales.created_at", to),
     ]);
     if (per.error || comm.error || adv.error) return null;
     const barbers = ((per.data as any)?.barbers ?? []).map((b: any) => ({ id: b.id, name: b.name, services: num(b.services), income: num(b.income), tips: num(b.tips) }));
     const names = Object.fromEntries((members.data ?? []).map((m: any) => [m.id, m.display_name]));
     return teamOfDay(barbers, (comm.data ?? []).map((c: any) => ({ member_id: c.member_id, item_type: c.item_type, amount: num(c.amount) })),
-      (adv.data ?? []).map((a: any) => ({ member_id: a.member_id, amount: num(a.amount) })), names);
+      (adv.data ?? []).map((a: any) => ({ member_id: a.member_id, amount: num(a.amount) })), names,
+      (sold.data ?? []).map((s: any) => ({ member_id: s.member_id, name: String(s.name).replace(/\s+/g, " ").trim(), qty: num(s.qty) })));
   };
 
   async function downloadPdf() {

@@ -120,6 +120,20 @@ export function CajaHoyView({
                 <div className="flex justify-between"><dt className="text-ink/60">Propinas</dt><dd className="tabular-nums">{formatMoney(r.tips)}</dd></div>
                 {r.advances > 0 && <div className="flex justify-between text-[#7A0F24]"><dt>Adelantos (se restan)</dt><dd className="tabular-nums">− {formatMoney(r.advances)}</dd></div>}
               </dl>
+              {r.items.length > 0 && (
+                <div className="mt-3 border-t border-black/5 pt-2">
+                  <div className="mb-1 text-[10px] font-extrabold uppercase tracking-wide text-ink/45">Qué hizo · {r.items.reduce((s, i) => s + i.qty, 0)} en total</div>
+                  <ul className="space-y-1">
+                    {r.items.map((i) => (
+                      <li key={i.name} className="flex items-center gap-2 text-sm">
+                        <span className="w-8 shrink-0 font-extrabold tabular-nums">{i.qty} ×</span>
+                        <span className="min-w-0 flex-1 truncate">{i.name}</span>
+                        <span className="h-2 shrink-0 rounded-full bg-[#2F5BFF]" style={{ width: `${Math.max(8, (i.qty / r.items[0].qty) * 56)}px` }} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ))}
           <div className="flex justify-between border-t border-black/5 pt-2 text-sm font-extrabold"><span>Total que se le debe al equipo</span><span className="tabular-nums">{formatMoney(team.reduce((s, r) => s + r.owed, 0))}</span></div>

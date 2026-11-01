@@ -67,7 +67,7 @@ export async function buildCajaPdf(d: CajaPdfData): Promise<Uint8Array> {
   const need = (h: number) => { if (y - h < 64) newPage(); };
 
   const section = (title: string, hint?: string) => {
-    need(54); y -= 10;
+    need(96); y -= 10;
     page.drawRectangle({ x: M, y: y - 4, width: 4, height: 16, color: BLUE });
     text(title.toUpperCase(), M + 12, y, 11, bold, INK);
     if (hint) right(hint, W - M, y, 8.5, font, MUTED);
@@ -126,6 +126,47 @@ export async function buildCajaPdf(d: CajaPdfData): Promise<Uint8Array> {
     (["cash", "transfer"] as const).map((m) => [METHOD[m], pdfMoney(d.byMethod[m].in), pdfMoney(d.byMethod[m].out), pdfMoney(d.byMethod[m].in - d.byMethod[m].out)]),
   );
 
+  /** Barras horizontales: una fila por dato, la más larga ocupa todo el ancho disponible. */
+  const bars = (rows: { label: string; value: number; shown: string }[], color: ReturnType<typeof rgb>) => {
+    const max = Math.max(1, ...rows.map((r) => r.value)), lw = 150, vw = 78, bx = M + 8 + lw, bwMax = CW - 16 - lw - vw;
+    for (const r of rows) {
+      need(22);
+      text(r.label, M + 8, y, 9, font, INK, lw - 8);
+      page.drawRectangle({ x: bx, y: y - 3, width: bwMax, height: 11, color: SOFT });
+      page.drawRectangle({ x: bx, y: y - 3, width: Math.max(2, (r.value / max) * bwMax), height: 11, color });
+      right(r.shown, M + CW - 8, y, 9, bold);
+      y -= 20;
+    }
+    y -= 4;
+  };
+  const sub = (s: string) => { need(30); text(s, M + 8, y, 8.5, bold, MUTED); y -= 16; };
+
+  const topServices = [...d.services].sort((a, b) => b.total - a.total).slice(0, 7);
+  if (topServices.length || (d.team && d.team.some((r) => r.income > 0))) {
+    section("Gráficos", "el día de un vistazo");
+    const cash = d.byMethod.cash.in, tr = d.byMethod.transfer.in;
+    if (cash + tr > 0) {
+      sub("CÓMO PAGARON LOS CLIENTES");
+      need(36);
+      const tw = CW - 16, cw = (cash / (cash + tr)) * tw;
+      if (cw > 0) page.drawRectangle({ x: M + 8, y: y - 6, width: cw, height: 16, color: GREEN });
+      if (tw - cw > 0) page.drawRectangle({ x: M + 8 + cw, y: y - 6, width: tw - cw, height: 16, color: BLUE });
+      y -= 26;
+      text(`Efectivo ${pdfMoney(cash)} (${Math.round((cash / (cash + tr)) * 100)}%)`, M + 8, y, 8.5, font, GREEN);
+      right(`Transferencia ${pdfMoney(tr)} (${Math.round((tr / (cash + tr)) * 100)}%)`, M + CW - 8, y, 8.5, font, BLUE);
+      y -= 24;
+    }
+    const people = (d.team ?? []).filter((r) => r.income > 0).sort((a, b) => b.income - a.income);
+    if (people.length) {
+      sub("LO QUE VENDIÓ CADA PERSONA");
+      bars(people.map((r) => ({ label: r.name, value: r.income, shown: pdfMoney(r.income) })), BLUE);
+    }
+    if (topServices.length) {
+      sub("SERVICIOS QUE MÁS DINERO DEJARON");
+      bars(topServices.map((l) => ({ label: `${l.qty} × ${l.name}`, value: l.total, shown: pdfMoney(l.total) })), GREEN);
+    }
+  }
+
   const nServ = d.services.reduce((s, l) => s + l.qty, 0);
   section("Servicios vendidos", `${nServ} en total`);
   if (!d.services.length) { text("No hubo servicios cobrados este día.", M + 8, y, 10, font, MUTED); y -= 26; }
@@ -151,6 +192,29 @@ export async function buildCajaPdf(d: CajaPdfData): Promise<Uint8Array> {
       need(34);
       text("Las propinas son de cada persona, no de la barbería. El adelanto se resta de lo que se le debe.", M + 8, y, 8.5, font, MUTED, CW - 16);
       y -= 24;
+
+      // Qué hizo cada uno: «3 × Servicio premium · 2 × Servicio básico».
+      const doers = d.team.filter((r) => r.items.length);
+      if (doers.length) {
+        section("Qué hizo cada uno");
+        for (const r of doers) {
+          const total = r.items.reduce((s, i) => s + i.qty, 0);
+          need(30 + r.items.length * 16);
+          page.drawRectangle({ x: M, y: y - 6, width: CW, height: 20, color: SOFT });
+          text(r.name, M + 8, y, 10, bold, INK, CW * 0.6);
+          right(`${total} ${total === 1 ? "servicio" : "servicios"} · ${pdfMoney(r.income)}`, M + CW - 8, y, 9, bold, BLUE);
+          y -= 22;
+          const maxQ = Math.max(...r.items.map((i) => i.qty));
+          for (const it of r.items) {
+            need(18);
+            text(`${it.qty} ×`, M + 8, y, 9, bold, INK);
+            text(it.name, M + 34, y, 9, font, INK, CW * 0.5);
+            page.drawRectangle({ x: M + CW * 0.62, y: y - 2, width: Math.max(3, (it.qty / maxQ) * (CW * 0.36)), height: 8, color: rgb(0.55, 0.78, 0.1) });
+            y -= 16;
+          }
+          y -= 8;
+        }
+      }
     }
   }
 
