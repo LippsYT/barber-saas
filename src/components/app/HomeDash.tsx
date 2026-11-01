@@ -28,7 +28,22 @@ export function HomeDash({
         <div className="display mt-1 text-5xl text-[#14944A] sm:text-6xl">{formatMoney(salesCents)}</div>
         <div className="mt-1 text-sm text-ink/55">{daysLeft <= 0 ? "Último día del mes" : daysLeft === 1 ? "Queda 1 día del mes" : `Quedan ${daysLeft} días de ${monthLabel}`}</div>
         {delta !== null && <div className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-extrabold ${delta >= 0 ? "bg-[#D6FF4A] text-ink" : "bg-[#FFE1E7] text-[#7A0F24]"}`}>{delta >= 0 ? "+" : ""}{delta}% vs mes anterior</div>}
-        <Chispa pose="run" className="pointer-events-none absolute bottom-1 right-1 w-24" />
+        {(() => {
+          // Chispa habla: un consejo corto según cómo va el mes.
+          const tip = salesCents === 0
+            ? { pose: "point" as const, text: "Aún no hay ventas este mes. Comparte tu link de reservas y cobra tu primera cita." }
+            : delta !== null && delta >= 0
+              ? { pose: "heart" as const, text: `¡Vas ${delta}% arriba del mes pasado! Sigue así.` }
+              : delta !== null
+                ? { pose: "run" as const, text: `Vas ${Math.abs(delta)}% abajo del mes pasado. Escríbeles a tus clientes para llenar la agenda.` }
+                : { pose: "wave" as const, text: "¡Buen mes! Cada cita cobrada suma a esta cifra." };
+          return (
+            <div className="mt-4 flex items-center gap-3 border-t border-black/5 pt-3">
+              <Chispa pose={tip.pose} className="pointer-events-none w-14 shrink-0" />
+              <p className="rounded-2xl rounded-bl-sm bg-[#F4F1E8] px-3 py-2 text-sm font-semibold leading-snug text-ink/75">{tip.text}</p>
+            </div>
+          );
+        })()}
       </section>
       <section>
         <h2 className="mb-2 font-display text-xl font-extrabold uppercase">Tus cifras · {monthLabel}</h2>
