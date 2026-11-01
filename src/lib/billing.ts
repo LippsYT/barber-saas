@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { ADDONS, addonLookupKey, keyFromLookup, type AddonKey } from "@/lib/addons";
 
 /** Stripe del servidor. Sin STRIPE_SECRET_KEY la suscripción queda desactivada y la pantalla lo dice. */
 export function stripeClient(): Stripe | null {
@@ -7,6 +8,22 @@ export function stripeClient(): Stripe | null {
   return key ? new Stripe(key) : null;
 }
 export const billingReady = () => Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim());
+
+/** Precio mensual de Stripe de un complemento. Se busca por `lookup_key` y, si no existe, se crea la primera vez. */
+export async function addonPriceId(stripe: Stripe, key: AddonKey): Promise<string> {
+  const lookup = addonLookupKey(key);
+  const found = await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1 });
+  if (found.data[0]) return found.data[0].id;
+  const a = ADDONS.find((x) => x.key === key)!;
+  const created = await stripe.prices.create({
+    currency: "usd", unit_amount: a.price, recurring: { interval: "month" }, lookup_key: lookup,
+    product_data: { name: `Pulso · ${a.name}`, metadata: { addon: key } },
+  });
+  return created.id;
+}
+/** Complementos que trae una suscripción de Stripe, leídos de los `lookup_key` de sus precios. */
+export const addonsOfSubscription = (sub: Stripe.Subscription): AddonKey[] =>
+  (sub.items?.data ?? []).map((i) => keyFromLookup(i.price?.lookup_key)).filter((k): k is AddonKey => k !== null);
 
 /** RPC de facturación con el cliente anon + CRON_SECRET (se valida en SQL contra vault, como la cola de mensajes). */
 export function billingRpc() {
@@ -24,7 +41,7 @@ export function billingRpc() {
       const end = (sub as unknown as { current_period_end?: number }).current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? null;
       const iso = (s: number | null | undefined) => (s ? new Date(s * 1000).toISOString() : null);
       const { data, error } = await db.rpc("billing_sync", { p_secret: secret, p_customer: customer, p_subscription: sub.id, p_status: sub.status,
-        p_period_end: iso(end), p_trial_end: iso(sub.trial_end), p_cancel: sub.cancel_at_period_end });
+        p_period_end: iso(end), p_trial_end: iso(sub.trial_end), p_cancel: sub.cancel_at_period_end, p_addons: addonsOfSubscription(sub) });
       if (error) throw new Error(error.message);
       return Boolean(data);
     },

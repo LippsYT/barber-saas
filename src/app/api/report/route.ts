@@ -16,6 +16,9 @@ export async function POST() {
   const row = mem?.[0] as { role?: string; business?: { id: string; name: string; timezone: string; currency: string } } | undefined;
   if (!row?.business) return fail(400, "Primero crea tu barbería.");
   if (row.role !== "owner" && row.role !== "admin") return fail(403, "Solo el dueño o un admin puede pedir el informe.");
+  const { data: bill } = await sb.rpc("my_billing");
+  const b = bill as { all?: boolean; addons?: string[] } | null;
+  if (b && b.all === false && !(b.addons ?? []).includes("informes")) return fail(402, "El informe es del complemento Informes y PDF. Agrégalo en Suscripción.");
   try {
     const r = await sendWeeklyReport({ business_id: row.business.id, name: row.business.name, timezone: row.business.timezone, currency: row.business.currency, owner_email: auth.user.email });
     return r === "sent" ? NextResponse.json({ sent: true, to: auth.user.email }) : fail(409, "El envío de email no está habilitado en este entorno.");

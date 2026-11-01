@@ -11,15 +11,17 @@ import { Logo } from "@/components/brand/Logo";
 import { TabBar } from "@/components/app/TabBar";
 import { Splash } from "@/components/app/Splash";
 import { Paywall } from "@/components/app/Paywall";
+import { LockedAddon } from "@/components/app/LockedAddon";
+import type { AddonKey } from "@/lib/addons";
 
 const ROLE_ES = { owner: "Dueño", admin: "Admin", receptionist: "Recepción", barber: "Barbero" } as const;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter(); const path = usePathname();
   const reduce = useReducedMotion();
-  type Billing = { active: boolean; exempt: boolean; trial_ends_at: string; status: string };
+  type Billing = { active: boolean; exempt: boolean; trial_ends_at: string; status: string; all?: boolean; addons?: string[] };
   const [billing, setBilling] = useState<Billing | null>(null);
-  const [ctx, setCtx] = useState<Ctx | null>(null); const [more, setMore] = useState(false); const [entered, setEntered] = useState(false);
+  const [ctx, setCtx] = useState<Omit<Ctx, "has"> | null>(null); const [more, setMore] = useState(false); const [entered, setEntered] = useState(false);
   useEffect(() => setMore(false), [path]);
   useEffect(() => setEntered(true), []);
   // Tema claro/oscuro guardado; al salir de /app se quita para no afectar las páginas públicas.
@@ -45,6 +47,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ["/app/ajustes", "Ajustes", ctx.isManager, Settings],
   ];
   const items = nav.filter((n) => n[2]);
+  // Sin datos de facturación (migración aún sin aplicar) no se bloquea nada; si la respuesta no trae complementos, tampoco.
+  const has = (k: AddonKey) => billing === null || billing.all === undefined || billing.all || (billing.addons ?? []).includes(k);
+  const GATED: Record<string, AddonKey> = { "/app/whatsapp": "whatsapp", "/app/mensajes": "whatsapp", "/app/inventario": "inventario" };
+  const needs = GATED[path];
   const blocked = billing !== null && !billing.active && !(ctx.role === "owner" && path === "/app/suscripcion");
   const trialDays = billing && billing.active && !billing.exempt && !["active", "trialing", "past_due"].includes(billing.status)
     ? Math.ceil((Date.parse(billing.trial_ends_at) - Date.now()) / 86400000) : null;
@@ -55,7 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const active = (h: string) => path === h || (h === "/app/ajustes" && SETTINGS.some((s) => path === `/app/${s}`));
   return (
     <><Splash ready />
-    <AppCtx.Provider value={ctx}>
+    <AppCtx.Provider value={{ ...ctx, has }}>
       <div className="app-canvas min-h-screen md:flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-black/5 bg-ink p-5 text-white md:flex">
           <Link href="/app" className="mb-8"><Logo light /></Link>
@@ -76,7 +82,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {trialDays > 0 ? `Te ${trialDays === 1 ? "queda 1 día" : `quedan ${trialDays} días`} de prueba · Activar suscripción` : "Tu prueba termina hoy · Activar suscripción"}</Link>}
           <div className="mx-auto max-w-3xl px-4 pb-app-nav pt-4 md:px-8 md:pb-12 md:pt-8">
             <motion.div key={path} initial={entered && reduce === false ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-              {children}
+              {needs && !has(needs) ? <LockedAddon addon={needs} /> : children}
             </motion.div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client";
-import { Download } from "lucide-react";
+import Link from "next/link";
+import { Download, Lock } from "lucide-react";
 import { moneySplit, type TeamRow } from "@/lib/cajaTeam";
 import { formatMoney, formatSigned } from "@/lib/money";
 import { AmountField } from "@/components/ui/NumPad";
@@ -36,9 +37,10 @@ export function ServiceList({ lines }: { lines: { name: string; qty: number; uni
 
 export function CajaHoyView({
   dayLabel, income, tips, expenses, net, services, byMethod, expensesList, locked,
-  expense, onExpense, onSaveExpense, saving, error, onPrev, onNext, team, onPdf, pdfBusy,
+  expense, onExpense, onSaveExpense, saving, error, onPrev, onNext, team, onPdf, pdfBusy, pdfLocked,
 }: {
   dayLabel: string;
+  pdfLocked?: boolean;
   team?: TeamRow[] | null;
   onPdf?: () => void;
   pdfBusy?: boolean;
@@ -81,6 +83,11 @@ export function CajaHoyView({
           ))}
         </div>
       </section>
+      {pdfLocked && (
+        <Link href="/app/suscripcion" className="btn2 flex w-full items-center justify-center gap-2">
+          <Lock className="h-4 w-4" />Reporte en PDF · complemento Informes
+        </Link>
+      )}
       {onPdf && (
         <button className="btn2 flex w-full items-center justify-center gap-2" onClick={onPdf} disabled={pdfBusy}>
           <Download className="h-4 w-4" />{pdfBusy ? "Armando el PDF…" : "Descargar reporte en PDF"}

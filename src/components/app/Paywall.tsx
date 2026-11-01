@@ -25,7 +25,7 @@ export function Paywall({ isOwner, businessName, onLogout }: { isOwner: boolean;
         <p className="text-white/80">{isOwner
           ? `Para seguir usando Pulso en ${businessName}, activa tu suscripción. Tus datos están guardados y vuelven en cuanto pagues. Mientras tanto, tus clientes no pueden reservar.`
           : `La suscripción de ${businessName} necesita renovarse. Avísale al dueño del negocio para que la active.`}</p>
-        {isOwner && <button className="btn-gold w-full" disabled={busy} onClick={subscribe}>{busy ? "Abriendo…" : "Activar suscripción"}</button>}
+        {isOwner && <button className="btn-gold w-full" disabled={busy} onClick={() => { setBusy(true); location.href = "/app/suscripcion"; }}>{busy ? "Abriendo…" : "Elegir mi plan"}</button>}
         {err && <p role="alert" className="text-sm text-red-200">{err}</p>}
         <button className="text-sm font-semibold text-white/70 underline" onClick={onLogout}>Salir</button>
       </div>

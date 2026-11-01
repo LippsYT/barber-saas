@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bell, CalendarCheck, CalendarX, ChevronDown, FileText, Repeat, Star } from "lucide-react";
 import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
+import { LockedAddon } from "@/components/app/LockedAddon";
 
 type Key = "confirmation" | "reminder24" | "reminder2" | "cancellation" | "review";
 type Settings = { messages?: Partial<Record<Key, boolean>>; messages_text?: Partial<Record<string, string>>; review_url?: string; weekly_report?: boolean };
@@ -23,7 +24,7 @@ const SAMPLE: Record<string, string> = { "@nombre_cliente": "Carlos", "@nombre_d
 const preview = (t: string) => Object.entries(SAMPLE).reduce((a, [k, v]) => a.split(k).join(v), t);
 
 export default function Mensajes() {
-  const { biz, isManager } = useApp();
+  const { biz, isManager, has } = useApp();
   const [st, setSt] = useState<Settings | null>(null);
   const [open, setOpen] = useState<string | null>(null); const [draft, setDraft] = useState("");
   const [review, setReview] = useState(""); const [err, setErr] = useState(""); const [note, setNote] = useState("");
@@ -80,10 +81,10 @@ export default function Mensajes() {
       <Link href="/app/whatsapp" className="card flex items-center gap-3 p-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#2F5BFF]/10 text-[#2F5BFF]"><Repeat className="h-5 w-5" /></span>
         <span className="min-w-0 flex-1"><span className="block font-bold">Reactivación de clientes</span><span className="block text-xs text-ink/55">Invita a volver a quien lleva tiempo sin venir. Se configura en WhatsApp.</span></span></Link>
 
-      <section className="card flex items-center gap-3 p-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#2F5BFF]/10 text-[#2F5BFF]"><FileText className="h-5 w-5" /></span>
+      {!has("informes") ? <LockedAddon addon="informes" compact /> : <><section className="card flex items-center gap-3 p-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#2F5BFF]/10 text-[#2F5BFF]"><FileText className="h-5 w-5" /></span>
         <span className="min-w-0 flex-1"><span className="block font-bold">Informe semanal por email</span><span className="block text-xs text-ink/55">Un PDF con tus ventas, gastos y citas, cada lunes, al correo del dueño.</span></span>
         <input type="checkbox" className="h-6 w-11 shrink-0 accent-[#2F5BFF]" aria-label="Informe semanal" checked={Boolean(st.weekly_report)} disabled={!isManager} onChange={(e) => save({ weekly_report: e.target.checked })} /></section>
-      {isManager && <button className="btn2 w-full" disabled={sending} onClick={sendNow}>{sending ? "Enviando…" : "Enviarme el informe de la semana pasada ahora"}</button>}
+      {isManager && <button className="btn2 w-full" disabled={sending} onClick={sendNow}>{sending ? "Enviando…" : "Enviarme el informe de la semana pasada ahora"}</button>}</>}
     </main>
   );
 }

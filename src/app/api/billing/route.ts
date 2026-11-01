@@ -1,14 +1,23 @@
 import { NextResponse } from "next/server";
 import { supabaseFromCookies } from "@/lib/supabase-server";
-import { billingReady, billingRpc, stripeClient } from "@/lib/billing";
+import { addonPriceId, addonsOfSubscription, billingReady, billingRpc, stripeClient } from "@/lib/billing";
+import { addonOf, isAddonKey, keyFromLookup, type AddonKey } from "@/lib/addons";
 import { appBaseUrl } from "@/lib/messaging/templates";
 
 export const runtime = "nodejs";
 const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
 
-/** POST { action: "checkout" | "portal" }: devuelve { url } de Stripe para suscribirse o administrar el plan. Solo el dueño. */
+/** Agrega los complementos de los que dependen los elegidos (reactivación necesita WhatsApp). */
+const withNeeds = (keys: AddonKey[]): AddonKey[] => {
+  const all = new Set<AddonKey>(keys);
+  for (const k of keys) { const n = addonOf(k)?.needs; if (n) all.add(n); }
+  return [...all];
+};
+
+/** POST { action: "checkout" | "portal" | "addon" }: devuelve { url } de Stripe para suscribirse o administrar el plan,
+ *  o activa/quita un complemento ({ key, enable }) en la suscripción activa. Solo el dueño. */
 export async function POST(req: Request) {
-  let body: { action?: string };
+  let body: { action?: string; addons?: unknown[]; key?: unknown; enable?: boolean };
   try { body = await req.json(); } catch { return fail(400, "Pide un JSON válido."); }
   if (!billingReady()) return fail(503, "Los pagos todavía no están configurados.");
 
@@ -23,7 +32,7 @@ export async function POST(req: Request) {
 
   const stripe = stripeClient()!;
   const base = appBaseUrl();
-  const { data: sub } = await sb.from("subscriptions").select("stripe_customer_id, status").eq("business_id", row.business.id).maybeSingle();
+  const { data: sub } = await sb.from("subscriptions").select("stripe_customer_id, stripe_subscription_id, status").eq("business_id", row.business.id).maybeSingle();
   let customer = sub?.stripe_customer_id as string | undefined;
 
   try {
@@ -40,13 +49,34 @@ export async function POST(req: Request) {
         await billingRpc().linkCustomer(row.business.id, customer);
       }
       const trial = Number(process.env.STRIPE_TRIAL_DAYS);
+      const picked = withNeeds((Array.isArray(body.addons) ? body.addons : []).filter((k): k is AddonKey => typeof k === "string" && isAddonKey(k)));
+      const extra = await Promise.all(picked.map(async (k) => ({ price: await addonPriceId(stripe, k), quantity: 1 })));
       const s = await stripe.checkout.sessions.create({
         mode: "subscription", customer, client_reference_id: row.business.id,
-        line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+        line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }, ...extra],
         subscription_data: { metadata: { business_id: row.business.id }, ...(trial > 0 ? { trial_period_days: Math.min(Math.floor(trial), 90) } : {}) },
         success_url: `${base}/app/suscripcion?ok=1`, cancel_url: `${base}/app/suscripcion`,
       });
       return NextResponse.json({ url: s.url });
+    }
+    if (body.action === "addon") {
+      const key = String(body.key ?? "");
+      if (!isAddonKey(key)) return fail(400, "Complemento desconocido.");
+      if (!sub?.stripe_subscription_id || !["active", "trialing", "past_due"].includes(sub.status)) return fail(409, "Primero activa tu suscripción.");
+      const current = await stripe.subscriptions.retrieve(sub.stripe_subscription_id as string);
+      const has = addonsOfSubscription(current);
+      // Reactivación necesita WhatsApp; al quitar WhatsApp se quita también lo que depende de él.
+      const want = body.enable === false ? has.filter((k) => k !== key && !(key === "whatsapp" && addonOf(k)?.needs === "whatsapp")) : withNeeds([...has, key]);
+      for (const k of want.filter((k) => !has.includes(k))) {
+        await stripe.subscriptionItems.create({ subscription: current.id, price: await addonPriceId(stripe, k), quantity: 1, proration_behavior: "create_prorations" });
+      }
+      for (const k of has.filter((k) => !want.includes(k))) {
+        const item = current.items.data.find((i) => keyFromLookup(i.price?.lookup_key) === k);
+        if (item) await stripe.subscriptionItems.del(item.id, { proration_behavior: "create_prorations" });
+      }
+      const fresh = await stripe.subscriptions.retrieve(current.id);
+      await billingRpc().sync(fresh);
+      return NextResponse.json({ addons: addonsOfSubscription(fresh) });
     }
   } catch (e) {
     return fail(502, e instanceof Error ? `Stripe: ${e.message}` : "No se pudo hablar con Stripe.");

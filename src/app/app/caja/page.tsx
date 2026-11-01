@@ -41,7 +41,7 @@ function dayLabel(date: string) {
 }
 
 export default function Caja() {
-  const { biz, isManager, role } = useApp();
+  const { biz, isManager, role, has } = useApp();
   const today = localDate(Date.now(), biz.timezone);
   const [tab, setTab] = useState("hoy");
   const [day, setDay] = useState(today);
@@ -228,7 +228,7 @@ export default function Caja() {
       {(tab === "hoy" || tab === "cerrar") && !dia && <p className="text-sm text-ink/50">Cargando el día…</p>}
       {tab === "hoy" && dia && (
         <CajaHoyView
-          dayLabel={dayLabel(day)} team={dayTeam} onPdf={downloadPdf} pdfBusy={pdfBusy} income={dia.income} tips={dia.tips} expenses={dia.expenses} net={dia.net}
+          dayLabel={dayLabel(day)} team={dayTeam} onPdf={has("informes") ? downloadPdf : undefined} pdfLocked={!has("informes")} pdfBusy={pdfBusy} income={dia.income} tips={dia.tips} expenses={dia.expenses} net={dia.net}
           services={dia.services} byMethod={dia.byMethod} expensesList={dia.expensesList} locked={dia.locked}
           expense={expense} onExpense={(p) => setExpense({ ...expense, ...p })} onSaveExpense={saveExpense} saving={busy} error={err}
           onPrev={() => setDay(addDays(day, -1))} onNext={() => day < today && setDay(addDays(day, 1))}
