@@ -54,9 +54,28 @@ export const ADDONS: Addon[] = [
 ];
 
 /** Complementos que vienen en camino: se muestran en la lista pero todavía no se pueden contratar. */
-export const SOON: { key: string; name: string; summary: string }[] = [
-  { key: "campos", name: "Campos personalizados", summary: "Guarda en la ficha de cada cliente lo que tu negocio necesita." },
-  { key: "pixeles", name: "Píxeles personalizados", summary: "Mide qué campañas te traen reservas." },
+export interface SoonAddon { key: string; name: string; price: number; description: string; features: string[] }
+export const SOON: SoonAddon[] = [
+  {
+    key: "facturacion", name: "Facturación electrónica", price: 1500,
+    description: "Emite la factura de cada venta desde Pulso, sin llenar nada a mano.",
+    features: ["Factura a partir de cada cobro", "Datos fiscales de tu negocio y de tus clientes", "Envío de la factura al cliente"],
+  },
+  {
+    key: "campos", name: "Campos personalizados", price: 1500,
+    description: "Captura la información que tu negocio necesita en reservas y perfiles de clientes.",
+    features: ["Recoge la información que realmente necesitas", "Agrega preguntas específicas para tus reservas", "Recibe la información anticipadamente para preparar cada cita sin improvisaciones ni pérdida de tiempo"],
+  },
+  {
+    key: "pixeles", name: "Píxeles personalizados", price: 1500,
+    description: "Conecta tus herramientas de medición para entender qué campañas generan reservas.",
+    features: ["Mide cada acción de tus clientes", "Optimiza tus anuncios con datos reales", "Escala tus campañas con mayor precisión", "Integración fácil y sin procesos técnicos"],
+  },
+  {
+    key: "asistente", name: "Asistente IA", price: 5000,
+    description: "Un asistente virtual que atiende a tus clientes por WhatsApp y agenda citas por ti.",
+    features: ["Atiende a tus clientes 24/7 por WhatsApp", "Agenda citas por ti en tiempo real", "Respuestas instantáneas y profesionales", "Más reservas sin más esfuerzo", "Tu asistente virtual siempre activo"],
+  },
 ];
 
 export const addonOf = (key: string) => ADDONS.find((a) => a.key === key);

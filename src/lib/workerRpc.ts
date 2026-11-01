@@ -9,16 +9,11 @@ export const scopedToken = (scope: WorkerScope, secret: string) => createHash("s
 
 /**
  * Llama una RPC del worker con el cliente anon y el token de su dominio.
- * Transición: si la base todavía no tiene la migración 0032 (entiende solo el secreto crudo), reintenta una vez con el secreto.
- * Con la migración aplicada, el reintento falla igual y no abre nada.
+ * Requiere la migración 0032: la base ya no acepta el secreto crudo.
  */
 export function workerRpc(scope: WorkerScope) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, secret = process.env.CRON_SECRET;
   if (!url || !key || !secret) throw new Error("missing_env");
   const db = createClient(url, key, { auth: { persistSession: false } });
-  return async (fn: string, args: Record<string, unknown> = {}) => {
-    let r = await db.rpc(fn, { ...args, p_secret: scopedToken(scope, secret) });
-    if (r.error && /forbidden/i.test(r.error.message)) r = await db.rpc(fn, { ...args, p_secret: secret });
-    return r;
-  };
+  return (fn: string, args: Record<string, unknown> = {}) => db.rpc(fn, { ...args, p_secret: scopedToken(scope, secret) });
 }

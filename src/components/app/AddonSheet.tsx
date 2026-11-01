@@ -1,9 +1,9 @@
 "use client";
-import { Check, FileText, MessageCircle, Package, PencilLine, BarChart3, Star, TrendingUp, X, type LucideIcon } from "lucide-react";
+import { Check, FileText, MessageCircle, Package, PencilLine, BarChart3, Receipt, Sparkles, Star, TrendingUp, X, type LucideIcon } from "lucide-react";
 import { formatMoney } from "@/lib/money";
 import { BASE_PRICE, addonOf, addonsTotal, type AddonKey } from "@/lib/addons";
 
-export const ADDON_ICON: Record<string, LucideIcon> = { whatsapp: MessageCircle, resenas: Star, marketing: TrendingUp, informes: FileText, inventario: Package, campos: PencilLine, pixeles: BarChart3 };
+export const ADDON_ICON: Record<string, LucideIcon> = { whatsapp: MessageCircle, resenas: Star, marketing: TrendingUp, informes: FileText, inventario: Package, campos: PencilLine, pixeles: BarChart3, facturacion: Receipt, asistente: Sparkles };
 
 /** Ficha de un complemento (hoja desde abajo): qué incluye, cuánto pasarías a pagar y el botón para activarlo o quitarlo. */
 export function AddonSheet({ addon, active, free, paidPlan, current, owner, busy, error, onClose, onToggle }: {

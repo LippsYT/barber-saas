@@ -5,7 +5,7 @@ import { Check, ChevronLeft, X } from "lucide-react";
 import { useSubscription } from "@/lib/useSubscription";
 import { AddonSheet, ADDON_ICON } from "@/components/app/AddonSheet";
 import { formatMoney } from "@/lib/money";
-import { ADDONS, BASE_PRICE, PLAN_NAME, SOON, addonOf, addonsTotal, type AddonKey } from "@/lib/addons";
+import { ADDONS, BASE_PRICE, PLAN_NAME, SOON, addonOf, addonsTotal, type AddonKey, type SoonAddon } from "@/lib/addons";
 
 const PANEL = "min-h-[70vh] rounded-[2rem] bg-[#070B14] bg-[radial-gradient(120%_55%_at_100%_0%,rgba(47,91,255,.38),transparent_60%)] p-4 text-white";
 
@@ -13,6 +13,7 @@ export default function Complementos() {
   const s = useSubscription();
   const [open, setOpen] = useState<AddonKey | null>(null);
   const [charges, setCharges] = useState(false);
+  const [soon, setSoon] = useState<SoonAddon | null>(null);
   const active = s.paid ? s.active : [];
   const available = ADDONS.filter((a) => !active.includes(a.key));
 
@@ -47,11 +48,28 @@ export default function Complementos() {
 
       <div className="mb-2 mt-5 text-[11px] font-extrabold uppercase tracking-widest text-white/45">Próximamente · {SOON.length}</div>
       <div className="space-y-2">{SOON.map((c) => { const I = ADDON_ICON[c.key]; return (
-        <div key={c.key} className="flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3 opacity-80">
+        <div key={c.key} className="flex items-center gap-3 rounded-2xl bg-white/[0.06] p-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-white/60"><I className="h-5 w-5" /></span>
-          <div className="min-w-0 flex-1"><div className="truncate font-bold">{c.name}</div><div className="text-xs text-white/55">{c.summary}</div></div>
-          <span className="shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-xs font-extrabold text-white/60">Pronto</span>
+          <div className="min-w-0 flex-1"><div className="truncate font-bold">{c.name}</div><div className="text-xs text-white/55">{formatMoney(c.price)} al mes</div></div>
+          <button className="shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-xs font-extrabold text-white/70" onClick={() => setSoon(c)}>Ver detalles</button>
         </div>); })}</div>
+
+      {soon && (() => { const I = ADDON_ICON[soon.key]; return (
+        <div className="fixed inset-0 z-40 flex items-end bg-black/60" onClick={() => setSoon(null)} role="dialog" aria-modal="true" aria-label={soon.name}>
+          <div className="max-h-[88vh] w-full overflow-y-auto rounded-t-[2rem] bg-[#0E1424] p-5 pb-[calc(1.25rem+var(--sab))] text-white" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+            <div className="flex items-start gap-3">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#2F5BFF]/20 text-[#7FA0FF]"><I className="h-6 w-6" /></span>
+              <div className="min-w-0 flex-1"><h2 className="font-display text-2xl font-extrabold leading-tight">{soon.name}</h2><p className="text-sm text-white/55">Complemento · {formatMoney(soon.price)} al mes</p></div>
+              <button aria-label="Cerrar" className="p-1 text-white/50" onClick={() => setSoon(null)}><X className="h-5 w-5" /></button>
+            </div>
+            <p className="mt-4 text-base text-white/85">{soon.description}</p>
+            <div className="mb-2 mt-5 text-[11px] font-extrabold uppercase tracking-widest text-white/45">Qué incluye</div>
+            <ul className="space-y-2">{soon.features.map((f) => <li key={f} className="flex gap-2.5 text-base text-white/90"><Check className="mt-1 h-4 w-4 shrink-0 text-emerald-400" />{f}</li>)}</ul>
+            <button disabled className="mt-6 w-full rounded-full bg-white/10 py-4 text-base font-extrabold text-white/60">Disponible pronto</button>
+            <p className="mt-3 text-center text-xs text-white/45">Todavía no se puede contratar. Te avisaremos cuando esté listo.</p>
+          </div>
+        </div>); })()}
 
       <div className="sticky bottom-24 mt-6 flex items-center justify-between rounded-2xl bg-[#121A2E] p-4 shadow-xl ring-1 ring-white/10">
         <div><div className="text-xs text-white/55">Complementos activos</div><div className="font-display text-xl font-extrabold">{formatMoney(addonsTotal(active))} al mes</div></div>
