@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import type { TeamRow } from "@/lib/cajaTeam";
+import { moneySplit, type TeamRow } from "@/lib/cajaTeam";
 
 /** Reporte diario de caja en PDF (A4). Todos los montos llegan en centavos. */
 export interface CajaPdfData {
@@ -126,45 +126,43 @@ export async function buildCajaPdf(d: CajaPdfData): Promise<Uint8Array> {
     (["cash", "transfer"] as const).map((m) => [METHOD[m], pdfMoney(d.byMethod[m].in), pdfMoney(d.byMethod[m].out), pdfMoney(d.byMethod[m].in - d.byMethod[m].out)]),
   );
 
-  /** Barras horizontales: una fila por dato, la más larga ocupa todo el ancho disponible. */
-  const bars = (rows: { label: string; value: number; shown: string }[], color: ReturnType<typeof rgb>) => {
-    const max = Math.max(1, ...rows.map((r) => r.value)), lw = 150, vw = 78, bx = M + 8 + lw, bwMax = CW - 16 - lw - vw;
-    for (const r of rows) {
-      need(22);
-      text(r.label, M + 8, y, 9, font, INK, lw - 8);
-      page.drawRectangle({ x: bx, y: y - 3, width: bwMax, height: 11, color: SOFT });
-      page.drawRectangle({ x: bx, y: y - 3, width: Math.max(2, (r.value / max) * bwMax), height: 11, color });
-      right(r.shown, M + CW - 8, y, 9, bold);
-      y -= 20;
+  // Un solo gráfico, con una pregunta clara: ¿a dónde fue la plata que entró? (solo si se puede ver el equipo)
+  if (d.team && d.income > 0) {
+    const sp = moneySplit(d.income, d.expenses, d.team);
+    section("¿A dónde fue la plata?", "reparto de lo que entró");
+    need(150);
+    const parts: { label: string; value: number; color: ReturnType<typeof rgb>; note: string }[] = [
+      { label: "Para el equipo", value: sp.team, color: BLUE, note: "comisiones y propinas" },
+      { label: "Gastos", value: sp.expenses, color: INK, note: "lo que se pagó hoy" },
+      { label: "Para la barbería", value: sp.shop, color: LIME, note: "lo que queda" },
+    ];
+    const R = 62, cx = M + 8 + R + 6, cy = y - R - 4, tot = parts.reduce((s, p) => s + p.value, 0) || 1;
+    let a0 = -Math.PI / 2;
+    const live = parts.filter((p) => p.value > 0);
+    for (const p of live) {
+      const sweep = (p.value / tot) * Math.PI * 2;
+      if (live.length === 1) { page.drawCircle({ x: cx, y: cy, size: R, color: p.color }); break; }
+      const a1 = a0 + sweep, large = sweep > Math.PI ? 1 : 0;
+      // drawSvgPath usa y hacia abajo desde el punto (x, y) que le damos: el centro del círculo.
+      const path = `M 0 0 L ${R * Math.cos(a0)} ${R * Math.sin(a0)} A ${R} ${R} 0 ${large} 1 ${R * Math.cos(a1)} ${R * Math.sin(a1)} Z`;
+      page.drawSvgPath(path, { x: cx, y: cy, color: p.color, borderColor: WHITE, borderWidth: 2 });
+      a0 = a1;
     }
-    y -= 4;
-  };
-  const sub = (s: string) => { need(30); text(s, M + 8, y, 8.5, bold, MUTED); y -= 16; };
-
-  const topServices = [...d.services].sort((a, b) => b.total - a.total).slice(0, 7);
-  if (topServices.length || (d.team && d.team.some((r) => r.income > 0))) {
-    section("Gráficos", "el día de un vistazo");
-    const cash = d.byMethod.cash.in, tr = d.byMethod.transfer.in;
-    if (cash + tr > 0) {
-      sub("CÓMO PAGARON LOS CLIENTES");
-      need(36);
-      const tw = CW - 16, cw = (cash / (cash + tr)) * tw;
-      if (cw > 0) page.drawRectangle({ x: M + 8, y: y - 6, width: cw, height: 16, color: GREEN });
-      if (tw - cw > 0) page.drawRectangle({ x: M + 8 + cw, y: y - 6, width: tw - cw, height: 16, color: BLUE });
-      y -= 26;
-      text(`Efectivo ${pdfMoney(cash)} (${Math.round((cash / (cash + tr)) * 100)}%)`, M + 8, y, 8.5, font, GREEN);
-      right(`Transferencia ${pdfMoney(tr)} (${Math.round((tr / (cash + tr)) * 100)}%)`, M + CW - 8, y, 8.5, font, BLUE);
-      y -= 24;
-    }
-    const people = (d.team ?? []).filter((r) => r.income > 0).sort((a, b) => b.income - a.income);
-    if (people.length) {
-      sub("LO QUE VENDIÓ CADA PERSONA");
-      bars(people.map((r) => ({ label: r.name, value: r.income, shown: pdfMoney(r.income) })), BLUE);
-    }
-    if (topServices.length) {
-      sub("SERVICIOS QUE MÁS DINERO DEJARON");
-      bars(topServices.map((l) => ({ label: `${l.qty} × ${l.name}`, value: l.total, shown: pdfMoney(l.total) })), GREEN);
-    }
+    page.drawCircle({ x: cx, y: cy, size: R * 0.58, color: WHITE });
+    const mid = (s: string, yy: number, size: number, f: PDFFont, c = INK) => page.drawText(safe(s), { x: cx - f.widthOfTextAtSize(safe(s), size) / 2, y: yy, size, font: f, color: c });
+    mid("ENTRÓ", cy + 12, 7, bold, MUTED);
+    mid(pdfMoney(d.income), cy - 4, 11, bold);
+    const lx = cx + R + 40;
+    parts.forEach((p, i) => {
+      const ly = cy + 38 - i * 40;
+      page.drawCircle({ x: lx + 6, y: ly + 3, size: 6, color: p.color, borderColor: p.color === LIME ? rgb(0.55, 0.78, 0.1) : p.color, borderWidth: 0.5 });
+      text(p.label, lx + 20, ly, 11, bold);
+      right(pdfMoney(p.value), M + CW - 8, ly, 11, bold);
+      text(`${p.note} · ${Math.round((p.value / tot) * 100)}%`, lx + 20, ly - 13, 8.5, font, MUTED);
+    });
+    y = cy - R - 14;
+    if (sp.short > 0) { text(`El equipo y los gastos pasaron de lo que entró por ${pdfMoney(sp.short)}.`, M + 8, y, 9, bold, RED); y -= 18; }
+    y -= 6;
   }
 
   const nServ = d.services.reduce((s, l) => s + l.qty, 0);

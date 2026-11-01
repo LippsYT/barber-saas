@@ -20,6 +20,15 @@ export interface TeamRow {
   owed: number;
 }
 
+export interface MoneySplit { team: number; expenses: number; shop: number; total: number; short: number }
+/** A dónde fue la plata del día: lo del equipo (comisiones y propinas), los gastos y lo que le queda a la barbería.
+ *  Si el equipo y los gastos pasan de lo que entró, `shop` es 0 y `short` dice cuánto faltó. */
+export function moneySplit(income: number, expenses: number, rows: TeamRow[]): MoneySplit {
+  const team = Math.max(0, rows.reduce((s, r) => s + r.commission + r.tips, 0));
+  const left = income - team - expenses;
+  return { team, expenses, shop: Math.max(0, left), total: Math.max(income, team + expenses), short: Math.max(0, -left) };
+}
+
 export function teamOfDay(barbers: TeamBarber[], commissions: TeamCommission[], advances: TeamAdvance[], names: Record<string, string> = {}, sold: TeamItem[] = []): TeamRow[] {
   const ids = new Set<string>([...barbers.map((b) => b.id), ...commissions.map((c) => c.member_id), ...advances.map((a) => a.member_id), ...sold.map((s) => s.member_id)]);
   const rows: TeamRow[] = [];

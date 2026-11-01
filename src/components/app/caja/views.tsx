@@ -1,6 +1,6 @@
 "use client";
 import { Download } from "lucide-react";
-import type { TeamRow } from "@/lib/cajaTeam";
+import { moneySplit, type TeamRow } from "@/lib/cajaTeam";
 import { formatMoney, formatSigned } from "@/lib/money";
 import { AmountField } from "@/components/ui/NumPad";
 import { METHOD_ES, differenceText, shareOf, type MethodSplit, type SettleLine } from "@/lib/caja";
@@ -100,6 +100,41 @@ export function CajaHoyView({
         <ServiceList lines={services} />
         {services.length > 0 && <div className="mt-3 flex justify-between border-t border-black/5 pt-2 text-sm font-extrabold"><span>Total servicios</span><span className="tabular-nums">{formatMoney(income - tips)}</span></div>}
       </section>
+      {team && team.length > 0 && income > 0 && (() => {
+        const sp = moneySplit(income, expenses, team);
+        const parts = [
+          { label: "Para el equipo", note: "comisiones y propinas", value: sp.team, color: "#2F5BFF" },
+          { label: "Gastos", note: "lo que se pagó hoy", value: sp.expenses, color: "#070B14" },
+          { label: "Para la barbería", note: "lo que queda", value: sp.shop, color: "#D6FF4A" },
+        ];
+        const tot = parts.reduce((s, p) => s + p.value, 0) || 1;
+        let acc = 0;
+        const stops = parts.map((p) => { const from = (acc / tot) * 100; acc += p.value; return `${p.color} ${from}% ${(acc / tot) * 100}%`; }).join(", ");
+        return (
+          <section className="card">
+            <h2 className="font-display text-xl font-extrabold uppercase">¿A dónde fue la plata?</h2>
+            <div className="mt-3 flex items-center gap-4">
+              <div className="relative h-32 w-32 shrink-0 rounded-full" style={{ background: `conic-gradient(${stops})` }} role="img" aria-label="Reparto de lo que entró entre equipo, gastos y barbería">
+                <div className="absolute inset-[22%] grid place-items-center rounded-full bg-white text-center">
+                  <div><div className="text-[9px] font-extrabold uppercase tracking-wide text-ink/45">Entró</div><div className="font-display text-sm font-extrabold tabular-nums">{formatMoney(income)}</div></div>
+                </div>
+              </div>
+              <ul className="min-w-0 flex-1 space-y-2">
+                {parts.map((p) => (
+                  <li key={p.label} className="flex items-start gap-2">
+                    <span className="mt-1 h-3 w-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: p.color }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex justify-between gap-2 text-sm font-extrabold"><span className="truncate">{p.label}</span><span className="tabular-nums">{formatMoney(p.value)}</span></div>
+                      <div className="text-xs text-ink/55">{p.note} · {Math.round((p.value / tot) * 100)}%</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {sp.short > 0 && <p className="mt-3 text-sm font-bold text-[#7A0F24]">El equipo y los gastos pasaron de lo que entró por {formatMoney(sp.short)}.</p>}
+          </section>
+        );
+      })()}
       {team && team.length > 0 && (
         <section className="card space-y-3">
           <div>
