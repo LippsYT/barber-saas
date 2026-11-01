@@ -12,6 +12,7 @@ import { TabBar } from "@/components/app/TabBar";
 import { Splash } from "@/components/app/Splash";
 import { Paywall } from "@/components/app/Paywall";
 import { LockedAddon } from "@/components/app/LockedAddon";
+import { PushPrompt } from "@/components/app/PushPrompt";
 import type { AddonKey } from "@/lib/addons";
 
 const ROLE_ES = { owner: "Dueño", admin: "Admin", receptionist: "Recepción", barber: "Barbero" } as const;
@@ -57,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (blocked) return <><Splash ready /><Paywall isOwner={ctx.role === "owner"} businessName={ctx.biz.name} onLogout={async () => { await sb().auth.signOut(); router.replace("/login"); }} /></>;
   const logout = async () => { await sb().auth.signOut(); router.replace("/login"); };
   // Las pantallas de configuración cuelgan de Ajustes: el ítem sigue marcado mientras estás en ellas.
-  const SETTINGS = ["servicios", "equipo", "horario", "whatsapp", "pulselink", "referidos", "suscripcion", "mensajes", "reglas", "perfil", "inventario", "finanzas", "compartir"];
+  const SETTINGS = ["servicios", "equipo", "horario", "whatsapp", "pulselink", "referidos", "suscripcion", "mensajes", "reglas", "perfil", "inventario", "finanzas", "compartir", "notificaciones"];
   const active = (h: string) => path === h || (h === "/app/ajustes" && SETTINGS.some((s) => path === `/app/${s}`));
   return (
     <><Splash ready />
@@ -78,6 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Logo className="text-xl" />
             <button className="text-sm font-bold text-ink/60" onClick={logout}>Salir</button>
           </header>
+          <PushPrompt />
           {trialDays !== null && trialDays <= 7 && ctx.role === "owner" && <Link href="/app/suscripcion" className="block bg-[#D6FF4A] px-4 py-2 text-center text-sm font-bold text-[#070B14]">
             {trialDays > 0 ? `Te ${trialDays === 1 ? "queda 1 día" : `quedan ${trialDays} días`} de prueba · Activar suscripción` : "Tu prueba termina hoy · Activar suscripción"}</Link>}
           <div className="mx-auto max-w-3xl px-4 pb-app-nav pt-4 md:px-8 md:pb-12 md:pt-8">

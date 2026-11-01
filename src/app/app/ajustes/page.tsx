@@ -25,7 +25,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
     { href: "/app/referidos", title: "Referidos", hint: "Invita a otras barberías a Pulso", icon: Gift },
   ] },
   { title: "Cuenta", items: [
-    { href: "/app/suscripcion", title: "Suscripción", hint: "Tu plan de Pulso y facturación", icon: CreditCard, ownerOnly: true },
+    { href: "/app/notificaciones", title: "Notificaciones", hint: "Avisos en tu celular de cada reserva y cancelación", icon: BellRing },
+    { href: "/app/suscripcion", title: "Suscripción", hint: "Plan base y complementos de Pulso", icon: CreditCard, ownerOnly: true },
   ] },
 ];
 
