@@ -40,8 +40,11 @@ export function billingRpc() {
       // Las versiones nuevas de la API del periodo viven en el ítem; las viejas, en la suscripción.
       const end = (sub as unknown as { current_period_end?: number }).current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? null;
       const iso = (s: number | null | undefined) => (s ? new Date(s * 1000).toISOString() : null);
-      const { data, error } = await db.rpc("billing_sync", { p_secret: secret, p_customer: customer, p_subscription: sub.id, p_status: sub.status,
-        p_period_end: iso(end), p_trial_end: iso(sub.trial_end), p_cancel: sub.cancel_at_period_end, p_addons: addonsOfSubscription(sub) });
+      const args = { p_secret: secret, p_customer: customer, p_subscription: sub.id, p_status: sub.status,
+        p_period_end: iso(end), p_trial_end: iso(sub.trial_end), p_cancel: sub.cancel_at_period_end };
+      let { data, error } = await db.rpc("billing_sync", { ...args, p_addons: addonsOfSubscription(sub) });
+      // Si la migración 0029 aún no está aplicada, la función vieja no conoce los complementos: se sincroniza sin ellos.
+      if (error && /p_addons|schema cache|could not find/i.test(error.message)) ({ data, error } = await db.rpc("billing_sync", args));
       if (error) throw new Error(error.message);
       return Boolean(data);
     },
