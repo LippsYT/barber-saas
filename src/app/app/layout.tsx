@@ -80,12 +80,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </motion.div>
           </div>
         </div>
-        <TabBar path={path} canCash={ctx.canCash} open={more} onToggle={() => setMore(!more)} />
+        <TabBar path={path} canCash={ctx.canCash} isManager={ctx.isManager} activeFor={active} open={more} onToggle={() => setMore(!more)} />
         {more && <div className="fixed inset-0 z-20 bg-ink/40 md:hidden" onClick={() => setMore(false)}>
           <div className="absolute inset-x-4 bottom-app-nav space-y-2 rounded-3xl bg-white p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <Link href="/app/agenda?nueva=1" className="btn w-full">Nueva cita</Link>
             <Link href="/app/cobro" className="btn2 w-full">Nueva venta</Link>
             {ctx.isManager && <Link href="/app/servicios" className="btn2 w-full">Nuevo servicio</Link>}
+            <div className="grid grid-cols-3 gap-2 border-t border-black/5 pt-3">
+              {items.filter(([h]) => ["/app/cobro", "/app/libro"].includes(h) || (h === "/app/reportes" && ctx.canCash)).map(([h, l, , I]) => (
+                <Link key={h} href={h} className="flex flex-col items-center gap-1 rounded-2xl bg-ink/5 px-2 py-3 text-xs font-bold text-ink/70"><I className="h-5 w-5" />{l}</Link>))}
+            </div>
           </div>
         </div>}
       </div>

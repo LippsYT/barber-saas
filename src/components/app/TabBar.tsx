@@ -1,33 +1,51 @@
 "use client";
 import Link from "next/link";
-import { CalendarDays, Home, Plus, Users, Wallet, X } from "lucide-react";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import { BarChart3, CalendarDays, Home, Plus, Settings, Users, Wallet, X, type LucideIcon } from "lucide-react";
 
-const TABS = [
-  { href: "/app", label: "Inicio", icon: Home },
-  { href: "/app/agenda", label: "Agenda", icon: CalendarDays },
-  { href: "/app/clientes", label: "Clientes", icon: Users },
-  { href: "/app/caja", label: "Caja", icon: Wallet },
-];
+type Tab = { href: string; label: string; icon: LucideIcon };
 
-export function TabBar({ path, canCash, open, onToggle }: { path: string; canCash: boolean; open: boolean; onToggle: () => void }) {
-  const right = canCash ? TABS[3] : { href: "/app/reportes", label: "Reportes", icon: Wallet };
-  const items = [TABS[0], TABS[1], TABS[2], right];
-  const left = items.slice(0, 2);
-  const rest = items.slice(2);
-  const active = (h: string) => path === h;
-  const Item = ({ href, label, icon: I }: { href: string; label: string; icon: typeof Home }) => (
-    <Link href={href} aria-current={active(href) ? "page" : undefined} className={`flex min-w-0 flex-col items-center gap-0.5 pb-2 pt-2 text-[10px] font-bold uppercase ${active(href) ? "text-[#2F5BFF]" : "text-ink/45"}`}>
-      <I className="h-5 w-5" />{label}
-    </Link>
-  );
+const SPRING = { type: "spring", stiffness: 520, damping: 38, mass: 0.8 } as const;
+
+export function TabBar({ path, canCash, open, onToggle, isManager = true, activeFor }: {
+  path: string; canCash: boolean; open: boolean; onToggle: () => void; isManager?: boolean; activeFor?: (href: string) => boolean;
+}) {
+  const reduce = useReducedMotion();
+  const tabs: Tab[] = [
+    { href: "/app", label: "Inicio", icon: Home },
+    { href: "/app/agenda", label: "Agenda", icon: CalendarDays },
+    canCash ? { href: "/app/caja", label: "Caja", icon: Wallet } : { href: "/app/reportes", label: "Reportes", icon: BarChart3 },
+    { href: "/app/clientes", label: "Clientes", icon: Users },
+    ...(isManager ? [{ href: "/app/ajustes", label: "Ajustes", icon: Settings }] : []),
+  ];
+  const active = (h: string) => (activeFor ? activeFor(h) : path === h);
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-black/5 bg-white/95 pb-safe shadow-[0_-10px_30px_rgba(7,11,20,.08)] backdrop-blur md:hidden">
-      <div className="grid h-[var(--nav-h)] grid-cols-5 items-end">
-        {left.map((t) => <Item key={t.href} {...t} />)}
-        <button aria-expanded={open} aria-label={open ? "Cerrar acciones" : "Nueva cita o venta"} onClick={onToggle} className="-mt-6 grid h-14 w-14 place-self-center place-items-center rounded-full bg-[#D6FF4A] text-ink shadow-[0_10px_24px_rgba(214,255,74,.55)]">
-          {open ? <X className="h-6 w-6" /> : <Plus className="h-7 w-7" />}
-        </button>
-        {rest.map((t) => <Item key={t.href} {...t} />)}
+    <nav aria-label="Navegación principal" className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(var(--sab)+.75rem)] md:hidden">
+      <div className="mx-auto flex max-w-md items-center gap-2">
+        <div className="glass-bar pointer-events-auto flex h-14 min-w-0 flex-1 items-center justify-between rounded-full p-1.5">
+          {tabs.map(({ href, label, icon: I }) => {
+            const on = active(href);
+            return (
+              <Link key={href} href={href} aria-label={label} aria-current={on ? "page" : undefined}
+                className={`relative flex h-11 items-center justify-center rounded-full transition-colors ${on ? "px-3.5" : "w-11"} ${on ? "text-[#D6FF4A]" : "text-ink/55 active:scale-90"}`}>
+                {on && <motion.span layoutId="tab-pill" transition={reduce ? { duration: 0 } : SPRING} className="glass-pill absolute inset-0 rounded-full" />}
+                <motion.span className="relative flex items-center gap-1.5" animate={on && !reduce ? { scale: [0.86, 1] } : { scale: 1 }} transition={SPRING}>
+                  <I className="h-[1.15rem] w-[1.15rem]" strokeWidth={on ? 2.4 : 2} />
+                  <AnimatePresence initial={false}>
+                    {on && <motion.span key="l" initial={reduce ? false : { width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={reduce ? undefined : { width: 0, opacity: 0 }}
+                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden whitespace-nowrap text-xs font-bold">{label}</motion.span>}
+                  </AnimatePresence>
+                </motion.span>
+              </Link>
+            );
+          })}
+        </div>
+        <motion.button whileTap={reduce ? undefined : { scale: 0.88 }} aria-expanded={open} aria-label={open ? "Cerrar acciones" : "Nueva cita o venta"} onClick={onToggle}
+          className="glass-bar glass-fab pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full text-ink">
+          <motion.span animate={{ rotate: open ? 135 : 0 }} transition={SPRING} className="grid place-items-center">
+            {open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" strokeWidth={2.4} />}
+          </motion.span>
+        </motion.button>
       </div>
     </nav>
   );
