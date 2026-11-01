@@ -52,13 +52,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const has = (k: AddonKey) => billing === null || billing.all === undefined || billing.all || (billing.addons ?? []).includes(k);
   const GATED: Record<string, AddonKey> = { "/app/whatsapp": "whatsapp", "/app/mensajes": "whatsapp", "/app/inventario": "inventario" };
   const needs = GATED[path];
-  const blocked = billing !== null && !billing.active && !(ctx.role === "owner" && path === "/app/suscripcion");
+  const blocked = billing !== null && !billing.active && !(ctx.role === "owner" && path.startsWith("/app/suscripcion"));
   const trialDays = billing && billing.active && !billing.exempt && !["active", "trialing", "past_due"].includes(billing.status)
     ? Math.ceil((Date.parse(billing.trial_ends_at) - Date.now()) / 86400000) : null;
   if (blocked) return <><Splash ready /><Paywall isOwner={ctx.role === "owner"} businessName={ctx.biz.name} onLogout={async () => { await sb().auth.signOut(); router.replace("/login"); }} /></>;
   const logout = async () => { await sb().auth.signOut(); router.replace("/login"); };
   // Las pantallas de configuración cuelgan de Ajustes: el ítem sigue marcado mientras estás en ellas.
-  const SETTINGS = ["servicios", "equipo", "horario", "whatsapp", "pulselink", "referidos", "suscripcion", "mensajes", "reglas", "perfil", "inventario", "finanzas", "compartir", "notificaciones"];
+  const SETTINGS = ["servicios", "equipo", "horario", "whatsapp", "pulselink", "referidos", "suscripcion", "mensajes", "reglas", "perfil", "inventario", "finanzas", "compartir", "notificaciones", "suscripcion/complementos"];
   const active = (h: string) => path === h || (h === "/app/ajustes" && SETTINGS.some((s) => path === `/app/${s}`));
   return (
     <><Splash ready />

@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabaseFromCookies } from "@/lib/supabase-server";
 import { addonPriceId, addonsOfSubscription, billingReady, billingRpc, stripeClient } from "@/lib/billing";
-import { addonOf, isAddonKey, keyFromLookup, type AddonKey } from "@/lib/addons";
+import { addonOf, isAddonKey, keyFromLookup, withNeeds, type AddonKey } from "@/lib/addons";
 import { appBaseUrl } from "@/lib/messaging/templates";
 
 export const runtime = "nodejs";
 const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
-
-/** Agrega los complementos de los que dependen los elegidos (reactivación necesita WhatsApp). */
-const withNeeds = (keys: AddonKey[]): AddonKey[] => {
-  const all = new Set<AddonKey>(keys);
-  for (const k of keys) { const n = addonOf(k)?.needs; if (n) all.add(n); }
-  return [...all];
-};
 
 /** POST { action: "checkout" | "portal" | "addon" }: devuelve { url } de Stripe para suscribirse o administrar el plan,
  *  o activa/quita un complemento ({ key, enable }) en la suscripción activa. Solo el dueño. */

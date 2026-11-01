@@ -40,6 +40,15 @@ describe("complementos de la suscripción", () => {
     await sync("active", ["whatsapp", "informes"]);
     expect(await targets()).toContain(s.bid);
   });
+  it("el pedido de reseña pide además el complemento de reseñas", async () => {
+    const review = async () => (await rows<{ on: boolean }>(db, "select _msg_on($1, 'review', true) \"on\"", [s.bid]))[0].on;
+    await sync("active", ["whatsapp"]);
+    expect(await review()).toBe(false);
+    await sync("active", ["whatsapp", "resenas"]);
+    expect(await review()).toBe(true);
+    await sync("active", ["whatsapp", "informes"]);
+    expect(await msgOn()).toBe(true); // la confirmación sigue con solo WhatsApp
+  });
   it("si el webhook no manda la lista (null) se conserva la anterior; cancelada no da nada", async () => {
     await sync("past_due", null);
     expect((await billing()).addons).toEqual(["whatsapp", "informes"]);
