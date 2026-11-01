@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { createDb, seedScenario, asUser, rows, type Db, type Scenario } from "./harness";
+import { createDb, seedScenario, asUser, rows, type Db, type Scenario, scoped } from "./harness";
 
 let db: Db; let s: Scenario;
-const SECRET = "s".repeat(64);
+const SECRET = scoped("billing");
 const has = async (k: string) => (await rows<{ h: boolean }>(db, "select _biz_has($1, $2) h", [s.bid, k]))[0].h;
 const msgOn = async () => (await rows<{ on: boolean }>(db, "select _msg_on($1, 'confirmation') \"on\"", [s.bid]))[0].on;
 const sync = (status: string, addons: string[] | null) =>
   asUser(db, null, () => rows(db, "select billing_sync($1, 'cus_a', 'sub_a', $2, now() + interval '30 days', null, false, $3::text[])", [SECRET, status, addons]));
 const billing = () => asUser(db, s.owner, async () => (await rows<{ b: { addons: string[]; all: boolean } }>(db, "select my_billing() b"))[0].b);
-const targets = async () => (await asUser(db, null, () => rows<{ business_id: string }>(db, "select * from report_targets($1)", [SECRET]))).map((r) => r.business_id);
+const REPORT = scoped("report");
+const targets = async () => (await asUser(db, null, () => rows<{ business_id: string }>(db, "select * from report_targets($1)", [REPORT]))).map((r) => r.business_id);
 
 beforeAll(async () => {
   db = await createDb(); s = await seedScenario(db);

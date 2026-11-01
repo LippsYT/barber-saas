@@ -3,6 +3,7 @@ import { supabaseFromCookies } from "@/lib/supabase-server";
 import { addonPriceId, addonsOfSubscription, billingReady, billingRpc, stripeClient } from "@/lib/billing";
 import { addonOf, isAddonKey, keyFromLookup, withNeeds, type AddonKey } from "@/lib/addons";
 import { appBaseUrl } from "@/lib/messaging/templates";
+import { guard } from "@/lib/guard";
 
 export const runtime = "nodejs";
 const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
@@ -10,6 +11,8 @@ const fail = (status: number, error: string) => NextResponse.json({ error }, { s
 /** POST { action: "checkout" | "portal" | "addon" }: devuelve { url } de Stripe para suscribirse o administrar el plan,
  *  o activa/quita un complemento ({ key, enable }) en la suscripción activa. Solo el dueño. */
 export async function POST(req: Request) {
+  const blocked = guard(req, { key: "billing", max: 30 });
+  if (blocked) return blocked;
   let body: { action?: string; addons?: unknown[]; key?: unknown; enable?: boolean };
   try { body = await req.json(); } catch { return fail(400, "Pide un JSON válido."); }
   if (!billingReady()) return fail(503, "Los pagos todavía no están configurados.");
@@ -47,7 +50,7 @@ export async function POST(req: Request) {
       const s = await stripe.checkout.sessions.create({
         mode: "subscription", customer, client_reference_id: row.business.id,
         line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }, ...extra],
-        subscription_data: { metadata: { business_id: row.business.id }, ...(trial > 0 ? { trial_period_days: Math.min(Math.floor(trial), 90) } : {}) },
+        subscription_data: { metadata: { business_id: row.business.id }, ...(trial > 0 && !sub?.stripe_subscription_id ? { trial_period_days: Math.min(Math.floor(trial), 90) } : {}) /* la prueba solo la primera vez */ },
         success_url: `${base}/app/suscripcion?ok=1`, cancel_url: `${base}/app/suscripcion`,
       });
       return NextResponse.json({ url: s.url });
@@ -72,7 +75,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ addons: addonsOfSubscription(fresh) });
     }
   } catch (e) {
-    return fail(502, e instanceof Error ? `Stripe: ${e.message}` : "No se pudo hablar con Stripe.");
+    console.error("billing", e instanceof Error ? e.name : "error"); // sin el texto de Stripe: no se muestra al cliente
+    return fail(502, "No se pudo hablar con Stripe. Intenta de nuevo en un momento.");
   }
   return fail(400, "Acción desconocida.");
 }

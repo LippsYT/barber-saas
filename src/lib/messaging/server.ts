@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { workerRpc } from "@/lib/workerRpc";
 import { getWhatsAppProvider } from "@/lib/whatsapp";
 import { sendPolicy } from "./allowlist";
 import { emailPolicy, getEmailProvider } from "./email";
@@ -8,17 +8,15 @@ import { processQueue, type ClaimedMessage, type QueueRpc } from "./sender";
 
 /** RPC de cola con el cliente anon + CRON_SECRET (validado en SQL contra vault). */
 export function queueRpc(): QueueRpc {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, secret = process.env.CRON_SECRET;
-  if (!url || !key || !secret) throw new Error("missing_env");
-  const db = createClient(url, key, { auth: { persistSession: false } });
+  const db = { rpc: workerRpc("messages") };
   return {
     async claim({ limit, appointmentId, id, fallbackInstance }) {
-      const { data, error } = await db.rpc("msg_claim", { p_secret: secret, p_limit: limit, p_appointment: appointmentId ?? null, p_id: id ?? null, p_fallback_instance: fallbackInstance ?? null });
+      const { data, error } = await db.rpc("msg_claim", { p_limit: limit, p_appointment: appointmentId ?? null, p_id: id ?? null, p_fallback_instance: fallbackInstance ?? null });
       if (error) throw new Error(error.message);
       return (data ?? []) as ClaimedMessage[];
     },
     async finish(id, status, providerId, err) {
-      const { data, error } = await db.rpc("msg_finish", { p_secret: secret, p_id: id, p_status: status, p_provider_id: providerId ?? null, p_error: err ?? null });
+      const { data, error } = await db.rpc("msg_finish", { p_id: id, p_status: status, p_provider_id: providerId ?? null, p_error: err ?? null });
       if (error) throw new Error(error.message);
       return String(data);
     },

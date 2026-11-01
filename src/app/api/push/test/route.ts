@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabaseFromCookies } from "@/lib/supabase-server";
 import { drainPush } from "@/lib/push";
+import { guard } from "@/lib/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** POST: manda un aviso de prueba a los dispositivos de quien lo pide. */
-export async function POST() {
+export async function POST(req: Request) {
+  const blocked = guard(req, { key: "push-test", max: 5 });
+  if (blocked) return blocked;
   let sb;
   try { sb = await supabaseFromCookies(); } catch { return NextResponse.json({ error: "Falta configurar Supabase." }, { status: 500 }); }
   const { data: auth } = await sb.auth.getUser();

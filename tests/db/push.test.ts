@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { createDb, seedScenario, asUser, rows, type Db, type Scenario } from "./harness";
+import { createDb, seedScenario, asUser, rows, type Db, type Scenario, scoped } from "./harness";
 
 let db: Db; let s: Scenario;
-const SECRET = "s".repeat(64);
-const EP = (n: string) => `https://push.example.test/send/${n.padEnd(30, "x")}`;
+const SECRET = scoped("push");
+const EP = (n: string) => `https://fcm.googleapis.com/fcm/send/${n.padEnd(30, "x")}`;
 const claim = async () => (await asUser(db, null, () => rows<{ c: { title: string; body: string; url: string; subs: { endpoint: string }[] }[] }>(db, "select push_claim($1) c", [SECRET])))[0].c;
 let slot = 0; // cada cita en un horario distinto: el mismo barbero no puede tener dos a la vez
 const book = (source: string, status = "confirmed") => rows<{ id: string }>(db,

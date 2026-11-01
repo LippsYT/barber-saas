@@ -1,3 +1,4 @@
+import { guard } from "@/lib/guard";
 import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
 
@@ -13,6 +14,8 @@ const usd = (c: number) => `US$ ${(Number(c) / 100).toFixed(2)}`;
 
 /** Pieza cuadrada vertical (1080×1350) para historias y publicaciones. ?kind=reservas | horario | servicios | equipo */
 export async function GET(req: Request, ctx: { params: Promise<{ slug: string }> }) {
+  const blocked = guard(req, { key: "og-share", max: 60, origin: false });
+  if (blocked) return blocked;
   const { slug } = await ctx.params;
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return new Response("not_found", { status: 404 });
   const kind = new URL(req.url).searchParams.get("kind") ?? "reservas";

@@ -1,3 +1,4 @@
+import { guard } from "@/lib/guard";
 import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
 import { OG_SIZE } from "@/lib/ogCard";
@@ -8,6 +9,8 @@ const GRID = "linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linea
 type Cat = { business?: { name: string; address: string | null }; barbers?: { name: string }[] };
 
 export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
+  const blocked = guard(_req, { key: "og-b", max: 120, origin: false });
+  if (blocked) return blocked;
   const { slug } = await ctx.params;
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return new Response("not_found", { status: 404 });
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });

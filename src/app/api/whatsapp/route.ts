@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseFromCookies } from "@/lib/supabase-server";
 import { getWhatsAppProvider } from "@/lib/whatsapp";
 import { instanceNameFor, normalizePhone } from "@/lib/whatsapp/parse";
+import { workerRpc } from "@/lib/workerRpc";
+import { guard } from "@/lib/guard";
 
 export const runtime = "nodejs";
 
@@ -10,6 +12,8 @@ function fail(status: number, error: string) {
 }
 
 export async function POST(req: Request) {
+  const blocked = guard(req, { key: "whatsapp", max: 30 });
+  if (blocked) return blocked;
   let body: { action?: string; phone?: string };
   try { body = await req.json(); } catch { return fail(400, "Pide un JSON válido."); }
 
@@ -36,7 +40,8 @@ export async function POST(req: Request) {
         const state = await provider.connectionState(link.instance_name);
         linkState = state;
         if (state === "open") {
-          await sb.from("whatsapp_links").update({ status: "connected", updated_at: new Date().toISOString() }).eq("business_id", biz.id);
+          // "Conectado" solo lo marca el servidor, después de preguntarle a Evolution (la base no deja que lo escriba el navegador).
+          await workerRpc("wa")("wa_link_status", { p_business: biz.id, p_status: "connected" });
           return NextResponse.json({ status: "connected", demo: false, provider: "evolution", phone: link.phone });
         }
       } catch { linkState = "unreachable"; }
@@ -50,7 +55,7 @@ export async function POST(req: Request) {
     const { data: link } = await sb.from("whatsapp_links").select("*").eq("business_id", biz.id).maybeSingle();
     if (!link?.demo) return fail(400, "Esto solo aplica en modo demo.");
     if (link.status !== "pairing") return fail(400, "Primero pide un código.");
-    const { error } = await sb.from("whatsapp_links").update({ status: "connected", updated_at: new Date().toISOString() }).eq("business_id", biz.id);
+    const { error } = await sb.rpc("wa_link_demo_confirm");
     if (error) return fail(400, "No se pudo guardar la conexión demo.");
     return NextResponse.json({ status: "connected", demo: true, provider: "mock" });
   }
@@ -61,12 +66,9 @@ export async function POST(req: Request) {
     try {
       await provider.createInstance(instance);
       const pairingCode = await provider.connectPairing(instance, phone);
-      const payload = {
-        business_id: biz.id, phone, instance_name: instance, pairing_code: pairingCode,
-        status: "pairing", provider: provider.id, demo: provider.demo, updated_at: new Date().toISOString(),
-      };
-      const { error } = await sb.from("whatsapp_links").upsert(payload, { onConflict: "business_id" });
-      if (error) return fail(400, "No se pudo guardar el código. ¿Aplicaste la migración 0010?");
+      // El nombre de la instancia lo calcula la base a partir del slug: no se puede apuntar a la instancia de otro negocio.
+      const { error } = await sb.rpc("wa_link_start", { p_phone: phone, p_code: pairingCode, p_provider: provider.id, p_demo: provider.demo });
+      if (error) return fail(400, "No se pudo guardar el código. ¿Aplicaste la migración 0032?");
       return NextResponse.json({
         status: "pairing", pairingCode, demo: provider.demo, provider: provider.id, phone,
       });

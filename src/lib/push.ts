@@ -1,25 +1,19 @@
 import webpush from "web-push";
-import { createClient } from "@supabase/supabase-js";
+import { workerRpc } from "@/lib/workerRpc";
 import { appBaseUrl } from "@/lib/messaging/templates";
 
 /** Envío de notificaciones push desde el servidor. Las claves VAPID viven en la base (se crean solas la primera vez). */
-function db() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, secret = process.env.CRON_SECRET;
-  if (!url || !key || !secret) throw new Error("missing_env");
-  return { client: createClient(url, key, { auth: { persistSession: false } }), secret };
-}
-
 export async function vapidKeys(): Promise<{ public: string; private: string }> {
-  const { client, secret } = db();
+  const rpc = workerRpc("push");
   const read = async () => {
-    const { data, error } = await client.rpc("push_vapid", { p_secret: secret });
+    const { data, error } = await rpc("push_vapid");
     if (error) throw new Error(error.message);
     return data as { public: string; private: string } | null;
   };
   const found = await read();
   if (found) return found;
   const k = webpush.generateVAPIDKeys();
-  const { error } = await client.rpc("push_vapid_set", { p_secret: secret, p_public: k.publicKey, p_private: k.privateKey });
+  const { error } = await rpc("push_vapid_set", { p_public: k.publicKey, p_private: k.privateKey });
   if (error) throw new Error(error.message);
   return (await read())!; // si dos peticiones crean a la vez, gana la primera y ambas leen la misma
 }
@@ -28,8 +22,8 @@ type Item = { title: string; body: string; url: string; subs: { endpoint: string
 
 /** Saca los avisos pendientes y los manda. Los dispositivos que ya no existen (404/410) se borran. */
 export async function drainPush(): Promise<{ items: number; sent: number; pruned: number }> {
-  const { client, secret } = db();
-  const { data, error } = await client.rpc("push_claim", { p_secret: secret, p_limit: 50 });
+  const rpc = workerRpc("push");
+  const { data, error } = await rpc("push_claim", { p_limit: 50 });
   if (error) throw new Error(error.message);
   const items = (data ?? []) as Item[];
   if (!items.length) return { items: 0, sent: 0, pruned: 0 };
@@ -50,7 +44,7 @@ export async function drainPush(): Promise<{ items: number; sent: number; pruned
   }
   let pruned = 0;
   if (dead.length) {
-    const r = await client.rpc("push_prune", { p_secret: secret, p_endpoints: dead });
+    const r = await rpc("push_prune", { p_endpoints: dead });
     pruned = Number(r.data ?? 0);
   }
   return { items: items.length, sent, pruned };

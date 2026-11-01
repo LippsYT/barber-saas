@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { createClient } from "@supabase/supabase-js";
+import { workerRpc } from "@/lib/workerRpc";
 import { addDays, localDate, localToUtcMs } from "@/lib/time";
 import { formatMoney } from "@/lib/money";
 import { emailPolicy, getEmailProvider } from "@/lib/messaging/email";
@@ -65,17 +65,15 @@ export async function buildReportPdf(biz: { name: string; currency: string }, pe
 }
 
 function rpc() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, secret = process.env.CRON_SECRET;
-  if (!url || !key || !secret) throw new Error("missing_env");
-  const db = createClient(url, key, { auth: { persistSession: false } });
+  const db = { rpc: workerRpc("report") };
   return {
     async targets(): Promise<ReportTarget[]> {
-      const { data, error } = await db.rpc("report_targets", { p_secret: secret });
+      const { data, error } = await db.rpc("report_targets");
       if (error) throw new Error(error.message);
       return (data ?? []) as ReportTarget[];
     },
     async data(business: string, p: Period): Promise<ReportData> {
-      const { data, error } = await db.rpc("report_data", { p_secret: secret, p_business: business, p_from: p.from, p_to: p.to });
+      const { data, error } = await db.rpc("report_data", { p_business: business, p_from: p.from, p_to: p.to });
       if (error) throw new Error(error.message);
       return data as ReportData;
     },

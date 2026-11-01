@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { createDb, seedScenario, asUser, rows, type Db, type Scenario } from "./harness";
+import { createDb, seedScenario, asUser, rows, type Db, type Scenario, scoped } from "./harness";
 
 let db: Db; let s: Scenario;
-const SECRET = "s".repeat(64);
+const SECRET = scoped("billing");
 beforeAll(async () => { db = await createDb(); s = await seedScenario(db); });
 
 describe("Suscripción (Stripe)", () => {

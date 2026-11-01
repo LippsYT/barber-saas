@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { createDb, seedScenario, asUser, rows, type Db, type Scenario } from "./harness";
+import { createDb, seedScenario, asUser, rows, type Db, type Scenario, scoped } from "./harness";
 
 let db: Db; let s: Scenario;
-const SECRET = "s".repeat(64);
+const SECRET = scoped("report");
 beforeAll(async () => { db = await createDb(); s = await seedScenario(db); });
 
 describe("galería y enlace", () => {
   it("el catálogo público trae la galería en orden", async () => {
     await asUser(db, s.owner, async () => {
-      await rows(db, "insert into portfolio_images(business_id, url, sort_order) values ($1,'https://img.test/2.jpg',2),($1,'https://img.test/1.jpg',1)", [s.bid]);
+      await rows(db, "insert into portfolio_images(business_id, url, sort_order) values ($1,'https://abc.supabase.co/storage/v1/object/public/avatars/2.jpg',2),($1,'https://abc.supabase.co/storage/v1/object/public/avatars/1.jpg',1)", [s.bid]);
     });
     const [r] = await asUser(db, null, () => rows<{ c: { business: { gallery: string[] } } }>(db, "select public_get_catalog('barberia-test') c"));
-    expect(r.c.business.gallery).toEqual(["https://img.test/1.jpg", "https://img.test/2.jpg"]);
+    expect(r.c.business.gallery).toEqual(["https://abc.supabase.co/storage/v1/object/public/avatars/1.jpg", "https://abc.supabase.co/storage/v1/object/public/avatars/2.jpg"]);
     await expect(asUser(db, s.barberA, () => rows(db, "insert into portfolio_images(business_id, url) values ($1,'https://x.co/a.jpg')", [s.bid]))).rejects.toThrow();
     await expect(asUser(db, s.owner, () => rows(db, "insert into portfolio_images(business_id, url) values ($1,'http://x.co/a.jpg')", [s.bid]))).rejects.toThrow();
   });

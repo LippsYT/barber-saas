@@ -16,7 +16,12 @@ export async function POST(req: Request) {
   catch { return NextResponse.json({ error: "firma_invalida" }, { status: 400 }); }
 
   try {
-    if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+    if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
+      // Se pide el estado actual a Stripe: un aviso viejo que llega tarde no puede reactivar una suscripción que ya se canceló.
+      const sub = event.data.object as Stripe.Subscription;
+      const fresh = await stripe.subscriptions.retrieve(sub.id).catch(() => null);
+      await billingRpc().sync(fresh ?? sub);
+    } else if (event.type === "customer.subscription.deleted") {
       await billingRpc().sync(event.data.object as Stripe.Subscription);
     } else if (event.type === "checkout.session.completed") {
       const s = event.data.object as Stripe.Checkout.Session;
@@ -24,7 +29,7 @@ export async function POST(req: Request) {
     }
   } catch (e) {
     // 500 hace que Stripe reintente el evento.
-    return NextResponse.json({ error: e instanceof Error ? e.message : "error" }, { status: 500 });
+    return NextResponse.json({ error: "error" }, { status: 500 });
   }
   return NextResponse.json({ received: true });
 }

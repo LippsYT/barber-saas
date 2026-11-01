@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { createDb, seedScenario, asUser, rows, type Db, type Scenario } from "./harness";
+import { createDb, seedScenario, asUser, rows, type Db, type Scenario, scoped } from "./harness";
 
 let db: Db; let s: Scenario; let tz: string; let day: string; let dow: number;
-const SECRET = "s".repeat(64);
+const SECRET = scoped("billing");
 const slots = async () => (await asUser(db, null, () => rows(db, "select * from public_get_availability('barberia-test', $1, $2::uuid[], $3::date)", [s.mA, `{${s.corte}}`, day]))).length;
 const billing = () => asUser(db, s.owner, async () => (await rows<{ b: { active: boolean; status: string } }>(db, "select my_billing() b"))[0].b);
 

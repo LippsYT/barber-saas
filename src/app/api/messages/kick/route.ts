@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runQueue } from "@/lib/messaging/server";
+import { guard } from "@/lib/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
  * de esa cita (los mismos que el cron mandaría en ≤3 min). Respeta la allowlist.
  */
 export async function POST(req: Request) {
+  const blocked = guard(req, { key: "kick", max: 20, origin: false });
+  if (blocked) return blocked;
   const body = await req.json().catch(() => ({}));
   let appointmentId: string | null = typeof body.appointmentId === "string" && /^[0-9a-f-]{36}$/i.test(body.appointmentId) ? body.appointmentId : null;
   if (!appointmentId && typeof body.token === "string" && body.token.length >= 16) {

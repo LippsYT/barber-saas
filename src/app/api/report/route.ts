@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { supabaseFromCookies } from "@/lib/supabase-server";
 import { sendWeeklyReport } from "@/lib/report";
+import { guard } from "@/lib/guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
 
 /** POST: manda ahora el informe de la última semana al correo de quien lo pide (dueño o admin). */
-export async function POST() {
+export async function POST(req: Request) {
+  const blocked = guard(req, { key: "report", max: 5 });
+  if (blocked) return blocked;
   let sb;
   try { sb = await supabaseFromCookies(); } catch { return fail(500, "Falta configurar Supabase."); }
   const { data: auth } = await sb.auth.getUser();
@@ -23,6 +26,7 @@ export async function POST() {
     const r = await sendWeeklyReport({ business_id: row.business.id, name: row.business.name, timezone: row.business.timezone, currency: row.business.currency, owner_email: auth.user.email });
     return r === "sent" ? NextResponse.json({ sent: true, to: auth.user.email }) : fail(409, "El envío de email no está habilitado en este entorno.");
   } catch (e) {
-    return fail(502, e instanceof Error ? e.message.slice(0, 160) : "No se pudo enviar el informe.");
+    console.error("report", e instanceof Error ? e.name : "error");
+    return fail(502, "No se pudo enviar el informe. Intenta de nuevo en un momento.");
   }
 }

@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   if (typeof body.clientId !== "string") return NextResponse.json({ error: "Falta el cliente." }, { status: 400 });
   const sb = await supabaseFromCookies();
   const { data: id, error } = await sb.rpc("enqueue_reactivation_now", { p_client: body.clientId });
-  if (error) return NextResponse.json({ error: error.message.includes("forbidden") ? "No tienes permiso." : error.message.includes("no_phone") ? "El cliente no tiene teléfono." : "No se pudo preparar el mensaje." }, { status: 400 });
+  if (error) return NextResponse.json({ error: error.message.includes("forbidden") ? "No tienes permiso." : error.message.includes("no_phone") ? "El cliente no tiene teléfono." : error.message.includes("addon_required") ? "Necesitas el complemento Marketing avanzado." : error.message.includes("client_no_opt_in") ? "Ese cliente no aceptó recibir mensajes por WhatsApp." : "No se pudo preparar el mensaje." }, { status: 400 });
   const [r] = await runQueue({ id: String(id), limit: 1 });
   const result = r?.result ?? "pending";
   const msg = result === "sent" ? "Mensaje enviado." : result === "skipped" ? "No se envió: el número no está permitido en este entorno." : result === "retry" ? "WhatsApp falló; lo reintentamos en unos minutos." : "No se pudo enviar.";

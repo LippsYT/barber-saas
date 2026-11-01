@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { workerRpc } from "@/lib/workerRpc";
 import { ADDONS, addonLookupKey, keyFromLookup, type AddonKey } from "@/lib/addons";
 
 /** Stripe del servidor. Sin STRIPE_SECRET_KEY la suscripción queda desactivada y la pantalla lo dice. */
@@ -27,12 +27,10 @@ export const addonsOfSubscription = (sub: Stripe.Subscription): AddonKey[] =>
 
 /** RPC de facturación con el cliente anon + CRON_SECRET (se valida en SQL contra vault, como la cola de mensajes). */
 export function billingRpc() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, secret = process.env.CRON_SECRET;
-  if (!url || !key || !secret) throw new Error("missing_env");
-  const db = createClient(url, key, { auth: { persistSession: false } });
+  const rpc = workerRpc("billing");
   return {
     async linkCustomer(business: string, customer: string) {
-      const { error } = await db.rpc("billing_link_customer", { p_secret: secret, p_business: business, p_customer: customer });
+      const { error } = await rpc("billing_link_customer", { p_business: business, p_customer: customer });
       if (error) throw new Error(error.message);
     },
     async sync(sub: Stripe.Subscription) {
@@ -40,11 +38,11 @@ export function billingRpc() {
       // Las versiones nuevas de la API del periodo viven en el ítem; las viejas, en la suscripción.
       const end = (sub as unknown as { current_period_end?: number }).current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? null;
       const iso = (s: number | null | undefined) => (s ? new Date(s * 1000).toISOString() : null);
-      const args = { p_secret: secret, p_customer: customer, p_subscription: sub.id, p_status: sub.status,
+      const args = { p_customer: customer, p_subscription: sub.id, p_status: sub.status,
         p_period_end: iso(end), p_trial_end: iso(sub.trial_end), p_cancel: sub.cancel_at_period_end };
-      let { data, error } = await db.rpc("billing_sync", { ...args, p_addons: addonsOfSubscription(sub) });
+      let { data, error } = await rpc("billing_sync", { ...args, p_addons: addonsOfSubscription(sub) });
       // Si la migración 0029 aún no está aplicada, la función vieja no conoce los complementos: se sincroniza sin ellos.
-      if (error && /p_addons|schema cache|could not find/i.test(error.message)) ({ data, error } = await db.rpc("billing_sync", args));
+      if (error && /p_addons|schema cache|could not find/i.test(error.message)) ({ data, error } = await rpc("billing_sync", args));
       if (error) throw new Error(error.message);
       return Boolean(data);
     },
