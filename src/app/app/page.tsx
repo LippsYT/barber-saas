@@ -55,10 +55,8 @@ export default function Inicio() {
       title: (a.items as { name: string }[])?.map((i) => i.name).join(", ") || "Cita",
       who: `${(a.client as { full_name?: string } | null)?.full_name ?? "Sin cliente"} · ${(a.member as { display_name?: string } | null)?.display_name ?? ""}`,
     })));
-    const extra = role === "owner" || role === "admin"
-      ? [{ href: "/app/servicios", label: "Servicios" }, { href: "/app/equipo", label: "Equipo" }, { href: "/app/libro", label: "Libro" }, { href: "/app/horario", label: "Horario" }, { href: "/app/whatsapp", label: "WhatsApp" }, { href: "/app/pulselink", label: "Pulse Link" }, { href: "/app/ajustes", label: "Ajustes" }]
-      : [{ href: "/app/cobro", label: "Cobrar" }];
-    setLinks(extra);
+    // Los accesos viven en la barra inferior, el menú "+" y Ajustes: el inicio queda limpio.
+    setLinks([]);
     setReady(true);
   })(); }, [biz.id, biz.timezone, biz.slug, role]);
 
