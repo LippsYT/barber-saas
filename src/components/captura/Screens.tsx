@@ -169,7 +169,7 @@ function CajaShots({ vista }: { vista: string }) {
   return (
     <Frame tab="/app/caja">
       <CajaHoyView
-        dayLabel="Viernes 30 de octubre" sentence={broken.sentence} income={17500} tips={1500} expenses={1400} net={16100}
+        dayLabel="Viernes 30 de octubre" income={17500} tips={1500} expenses={1400} net={16100}
         services={broken.lines}
         byMethod={{ cash: { in: 12500, out: 1400, net: 11100 }, transfer: { in: 5000, out: 0, net: 5000 }, card: { in: 0, out: 0, net: 0 }, other: { in: 0, out: 0, net: 0 } }}
         expensesList={[{ id: "1", description: "Insumos", amount: 1400, method: "cash" }]}

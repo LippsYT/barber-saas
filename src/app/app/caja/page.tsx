@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { sb, errEs } from "@/lib/supabase";
 import { useApp } from "@/components/ctx";
 import { toCents } from "@/lib/money";
-import { addDays, localDate, weekStart } from "@/lib/time";
+import { addDays, localDate, localToUtcMs, weekStart } from "@/lib/time";
+import { teamOfDay, type TeamRow } from "@/lib/cajaTeam";
 import { periodRange, type PeriodKind } from "@/components/Period";
 import { serviceBreakdown, settleAccounts, type MethodSplit, type SettleResult } from "@/lib/caja";
 import { proratedFixed, type PayPeriod, type PayType } from "@/lib/payout";
@@ -13,7 +14,6 @@ type Svc = { name: string; qty: number; unitPrice: number; total: number };
 type DayPayload = {
   locked: boolean;
   services: Svc[];
-  sentence: string;
   income: number;
   tips: number;
   expenses: number;
@@ -59,6 +59,8 @@ export default function Caja() {
   const [periodKind, setPeriodKind] = useState<"week" | "month">("week");
   const [advForm, setAdvForm] = useState({ member: "", amount: "", method: "cash", note: "" });
   const [team, setTeam] = useState<any[]>([]);
+  const [dayTeam, setDayTeam] = useState<TeamRow[] | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   useEffect(() => {
     const t = new URLSearchParams(location.search).get("tab");
@@ -79,7 +81,6 @@ export default function Caja() {
     setDia({
       locked: !!raw.locked,
       services: broken.lines,
-      sentence: broken.sentence,
       income: num(raw.income),
       tips: num(raw.tips),
       expenses: num(raw.expenses),
@@ -91,7 +92,45 @@ export default function Caja() {
       close: raw.close ? { counted: num(raw.close.counted), expected: num(raw.close.expected), difference: num(raw.close.difference), notes: raw.close.notes } : null,
     });
     setExpense((x) => ({ ...x, date: d }));
+    setDayTeam(isManager ? await loadTeamOfDay(d) : null);
   };
+
+  /** Lo que se le debe a cada persona ese día: comisión + propinas − adelantos. */
+  const loadTeamOfDay = async (d: string) => {
+    const from = new Date(localToUtcMs(d, "00:00", biz.timezone)).toISOString();
+    const to = new Date(localToUtcMs(addDays(d, 1), "00:00", biz.timezone)).toISOString();
+    const [per, comm, adv, members] = await Promise.all([
+      sb().rpc("caja_periodo", { p_business: biz.id, p_from: d, p_to: d }),
+      sb().from("commission_entries").select("member_id, item_type, amount").eq("business_id", biz.id).gte("occurred_at", from).lt("occurred_at", to),
+      sb().from("staff_advances").select("member_id, amount").eq("business_id", biz.id).gte("given_at", from).lt("given_at", to),
+      sb().from("memberships").select("id, display_name").eq("business_id", biz.id),
+    ]);
+    if (per.error || comm.error || adv.error) return null;
+    const barbers = ((per.data as any)?.barbers ?? []).map((b: any) => ({ id: b.id, name: b.name, services: num(b.services), income: num(b.income), tips: num(b.tips) }));
+    const names = Object.fromEntries((members.data ?? []).map((m: any) => [m.id, m.display_name]));
+    return teamOfDay(barbers, (comm.data ?? []).map((c: any) => ({ member_id: c.member_id, item_type: c.item_type, amount: num(c.amount) })),
+      (adv.data ?? []).map((a: any) => ({ member_id: a.member_id, amount: num(a.amount) })), names);
+  };
+
+  async function downloadPdf() {
+    if (!dia) return;
+    setPdfBusy(true); setErr("");
+    try {
+      const { buildCajaPdf } = await import("@/lib/cajaPdf");
+      const bytes = await buildCajaPdf({
+        business: biz.name, dayLabel: dayLabel(day), locked: dia.locked,
+        serviceIncome: dia.income - dia.tips, tips: dia.tips, income: dia.income, expenses: dia.expenses, net: dia.net,
+        byMethod: { cash: dia.byMethod.cash, transfer: dia.byMethod.transfer },
+        services: dia.services, expensesList: dia.expensesList, team: dayTeam, expectedCash: dia.expected, close: dia.close,
+      });
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = `caja-${biz.slug}-${day}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch { setErr("No se pudo armar el PDF. Intenta de nuevo."); }
+    setPdfBusy(false);
+  }
 
   const loadReport = async () => {
     const range = periodRange(kind, anchor, biz.timezone);
@@ -186,7 +225,7 @@ export default function Caja() {
       {(tab === "hoy" || tab === "cerrar") && !dia && <p className="text-sm text-ink/50">Cargando el día…</p>}
       {tab === "hoy" && dia && (
         <CajaHoyView
-          dayLabel={dayLabel(day)} sentence={dia.sentence} income={dia.income} tips={dia.tips} expenses={dia.expenses} net={dia.net}
+          dayLabel={dayLabel(day)} team={dayTeam} onPdf={downloadPdf} pdfBusy={pdfBusy} income={dia.income} tips={dia.tips} expenses={dia.expenses} net={dia.net}
           services={dia.services} byMethod={dia.byMethod} expensesList={dia.expensesList} locked={dia.locked}
           expense={expense} onExpense={(p) => setExpense({ ...expense, ...p })} onSaveExpense={saveExpense} saving={busy} error={err}
           onPrev={() => setDay(addDays(day, -1))} onNext={() => day < today && setDay(addDays(day, 1))}

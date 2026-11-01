@@ -1,4 +1,6 @@
 "use client";
+import { Download } from "lucide-react";
+import type { TeamRow } from "@/lib/cajaTeam";
 import { formatMoney, formatSigned } from "@/lib/money";
 import { AmountField } from "@/components/ui/NumPad";
 import { METHOD_ES, differenceText, shareOf, type MethodSplit, type SettleLine } from "@/lib/caja";
@@ -33,11 +35,13 @@ export function ServiceList({ lines }: { lines: { name: string; qty: number; uni
 }
 
 export function CajaHoyView({
-  dayLabel, sentence, income, tips, expenses, net, services, byMethod, expensesList, locked,
-  expense, onExpense, onSaveExpense, saving, error, onPrev, onNext,
+  dayLabel, income, tips, expenses, net, services, byMethod, expensesList, locked,
+  expense, onExpense, onSaveExpense, saving, error, onPrev, onNext, team, onPdf, pdfBusy,
 }: {
   dayLabel: string;
-  sentence: string;
+  team?: TeamRow[] | null;
+  onPdf?: () => void;
+  pdfBusy?: boolean;
   income: number;
   tips: number;
   expenses: number;
@@ -68,7 +72,6 @@ export function CajaHoyView({
       <section className="rounded-[1.7rem] bg-white p-5 shadow-soft">
         <div className="text-xs font-extrabold uppercase tracking-widest text-ink/40">Entró hoy</div>
         <div className="display mt-1 text-[clamp(2.4rem,11vw,3.4rem)] text-[#14944A]">{formatMoney(income)}</div>
-        <p className="mt-2 text-sm leading-snug text-ink/70">{sentence}</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           {[["Servicios", income - tips], ["Propinas", tips], ["Quedó", net]].map(([label, value]) => (
             <div key={String(label)} className="rounded-2xl bg-[#F4F1E8] px-1 py-2">
@@ -78,6 +81,11 @@ export function CajaHoyView({
           ))}
         </div>
       </section>
+      {onPdf && (
+        <button className="btn2 flex w-full items-center justify-center gap-2" onClick={onPdf} disabled={pdfBusy}>
+          <Download className="h-4 w-4" />{pdfBusy ? "Armando el PDF…" : "Descargar reporte en PDF"}
+        </button>
+      )}
       <section className="grid grid-cols-2 gap-2">
         {(["cash", "transfer"] as const).map((m) => (
           <div key={m} className="rounded-3xl bg-white p-4 shadow-soft">
@@ -92,6 +100,31 @@ export function CajaHoyView({
         <ServiceList lines={services} />
         {services.length > 0 && <div className="mt-3 flex justify-between border-t border-black/5 pt-2 text-sm font-extrabold"><span>Total servicios</span><span className="tabular-nums">{formatMoney(income - tips)}</span></div>}
       </section>
+      {team && team.length > 0 && (
+        <section className="card space-y-3">
+          <div>
+            <h2 className="font-display text-xl font-extrabold uppercase">Equipo del día</h2>
+            <p className="text-xs text-ink/55">Las propinas son de cada persona. El adelanto se resta de lo que se le debe.</p>
+          </div>
+          {team.map((r) => (
+            <div key={r.id} className="rounded-2xl bg-[#F4F1E8] p-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="min-w-0 truncate font-extrabold">{r.name}</div>
+                <div className="shrink-0 text-right">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink/45">Se le debe</div>
+                  <div className={`font-display text-xl font-extrabold tabular-nums ${r.owed < 0 ? "text-[#7A0F24]" : "text-[#14944A]"}`}>{formatMoney(r.owed)}</div>
+                </div>
+              </div>
+              <dl className="mt-2 space-y-1 text-sm">
+                <div className="flex justify-between"><dt className="text-ink/60">Comisión · {r.services} {r.services === 1 ? "servicio" : "servicios"}</dt><dd className="tabular-nums">{formatMoney(r.commission)}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/60">Propinas</dt><dd className="tabular-nums">{formatMoney(r.tips)}</dd></div>
+                {r.advances > 0 && <div className="flex justify-between text-[#7A0F24]"><dt>Adelantos (se restan)</dt><dd className="tabular-nums">− {formatMoney(r.advances)}</dd></div>}
+              </dl>
+            </div>
+          ))}
+          <div className="flex justify-between border-t border-black/5 pt-2 text-sm font-extrabold"><span>Total que se le debe al equipo</span><span className="tabular-nums">{formatMoney(team.reduce((s, r) => s + r.owed, 0))}</span></div>
+        </section>
+      )}
       <section className="card space-y-3">
         <div className="flex items-baseline justify-between">
           <h2 className="font-display text-xl font-extrabold uppercase">Gastos</h2>
