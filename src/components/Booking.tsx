@@ -273,6 +273,7 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
               <input className="inp" required placeholder="Tu nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               <input className="inp" required type="tel" placeholder="Tu WhatsApp" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5 accent-[#2F5BFF]" checked={form.optIn} onChange={(e) => setForm({ ...form, optIn: e.target.checked })} /> Acepto recordatorios por WhatsApp</label>
+              <p className="text-xs text-ink/55">Usamos tu nombre y teléfono solo para tu cita. <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">Privacidad</a></p>
               <button className="btn w-full" disabled={busy}>{busy ? "Reservando…" : "Confirmar reserva"}</button>
             </form>}
             {done && <p className="font-semibold">Listo. En la barbería real esta reserva queda guardada y te llevamos al enlace para cancelarla.</p>}

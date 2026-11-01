@@ -260,6 +260,7 @@ export function Landing() {
           <p className="text-sm text-white/60">Agenda, caja y reservas para barberías. Montos en dólares.</p>
           <Link href="/login?modo=registro" className="btn-gold py-2 text-sm">Crear cuenta</Link>
         </div>
+        <nav className="mx-auto mt-6 flex max-w-6xl flex-wrap gap-x-5 gap-y-1 border-t border-white/10 pt-4 text-sm font-bold text-white/70"><Link href="/terminos">Términos</Link><Link href="/privacidad">Privacidad</Link><Link href="/soporte">Soporte</Link></nav>
       </footer>
     </div>
   );

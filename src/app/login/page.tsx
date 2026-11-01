@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { sb, errEs } from "@/lib/supabase";
 
@@ -42,6 +43,7 @@ export default function Login() {
         <button type="button" className="text-sm underline" onClick={() => setSignup(!signup)}>
           {signup ? "Ya tengo cuenta" : "Soy nuevo / me invitaron: crear cuenta"}
         </button>
+        {signup && <p className="text-xs text-muted-foreground">Al crear tu cuenta aceptas los <Link href="/terminos" className="underline">Términos</Link> y la <Link href="/privacidad" className="underline">Política de privacidad</Link>.</p>}
         <p className="text-xs text-muted-foreground">¿Te invitó tu barbería? Crea tu cuenta con el mismo correo que te registraron y entrarás directo.</p>
       </form>
     </main>

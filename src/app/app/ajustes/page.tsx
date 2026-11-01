@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { BellRing, Boxes, Building2, CalendarClock, ChevronRight, CreditCard, Gift, Link2, MessageCircle, Palette, Scissors, Share2, SlidersHorizontal, UserCog, Wallet, type LucideIcon } from "lucide-react";
+import { BellRing, Boxes, Building2, CalendarClock, ChevronRight, CreditCard, Gift, LifeBuoy, Link2, MessageCircle, Palette, Scissors, Share2, SlidersHorizontal, UserCog, Wallet, type LucideIcon } from "lucide-react";
 import { useApp } from "@/components/ctx";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
 
@@ -27,6 +27,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   { title: "Cuenta", items: [
     { href: "/app/notificaciones", title: "Notificaciones", hint: "Avisos en tu celular de cada reserva y cancelación", icon: BellRing },
     { href: "/app/suscripcion", title: "Suscripción", hint: "Plan base y complementos de Pulso", icon: CreditCard, ownerOnly: true },
+    { href: "/soporte", title: "Ayuda y soporte", hint: "Escríbenos por WhatsApp, términos y privacidad", icon: LifeBuoy },
   ] },
 ];
 
