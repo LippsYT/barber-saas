@@ -9,19 +9,18 @@ import { emptyServiceDraft } from "@/components/app/ServiceEditor";
 import { WhatsAppConnect } from "@/components/app/WhatsAppConnect";
 import { saveServiceBundle } from "@/lib/saveService";
 import { Logo } from "@/components/brand/Logo";
-import { Chispa, type ChispaPose } from "@/components/brand/Mascot";
 
 const TZ = [["America/Guayaquil", "Ecuador"], ["America/Bogota", "Colombia"], ["America/Argentina/Buenos_Aires", "Argentina"], ["America/Mexico_City", "México"], ["America/Santiago", "Chile"], ["America/Lima", "Perú"], ["America/New_York", "EE. UU. (Este)"]] as const;
 const STEPS = ["Tu barbería", "Logotipo", "Equipo", "Servicios", "Horario", "Contacto", "WhatsApp", "Listo"] as const;
-const TIPS: { pose: ChispaPose; text: string }[] = [
-  { pose: "wave", text: "¡Hola! Te dejo todo listo en unos minutos. Empecemos por el nombre." },
-  { pose: "heart", text: "Tu logo sale en tu página de reservas. Si no lo tienes ahora, lo subes después." },
-  { pose: "point", text: "Cuéntame cuántos barberos atienden. Con su correo cada uno tendrá su propio usuario." },
-  { pose: "run", text: "Elige los servicios que ofreces. Los precios son de ejemplo: cámbialos a los tuyos." },
-  { pose: "stand", text: "Dime cuándo abres. Tus clientes solo podrán reservar en estas horas." },
-  { pose: "point", text: "Este será tu enlace de reservas. Lo compartirás en Instagram y WhatsApp." },
-  { pose: "wave", text: "Conecta tu WhatsApp para confirmar y recordar citas solo. Puedes hacerlo después." },
-  { pose: "heart", text: "¡Todo listo! Tu barbería ya puede recibir reservas." },
+const TIPS: { text: string }[] = [
+  { text: "¡Hola! Te dejo todo listo en unos minutos. Empecemos por el nombre." },
+  { text: "Tu logo sale en tu página de reservas. Si no lo tienes ahora, lo subes después." },
+  { text: "Cuéntame cuántos barberos atienden. Con su correo cada uno tendrá su propio usuario." },
+  { text: "Elige los servicios que ofreces. Los precios son de ejemplo: cámbialos a los tuyos." },
+  { text: "Dime cuándo abres. Tus clientes solo podrán reservar en estas horas." },
+  { text: "Este será tu enlace de reservas. Lo compartirás en Instagram y WhatsApp." },
+  { text: "Conecta tu WhatsApp para confirmar y recordar citas solo. Puedes hacerlo después." },
+  { text: "¡Todo listo! Tu barbería ya puede recibir reservas." },
 ];
 
 /** Servicios de ejemplo para elegir con un toque. Precios en dólares, editables. */
@@ -236,7 +235,7 @@ export default function Onboarding() {
         <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-white/15"><motion.div className="h-full rounded-full bg-[#D6FF4A]" initial={false} animate={{ width: `${Math.max(6, progress * 100)}%` }} transition={{ type: "spring", stiffness: 140, damping: 22 }} /></div>
 
         <div className="mb-5 flex items-end gap-3">
-          <Chispa pose={tip.pose} className="w-20 shrink-0" />
+          <img src="/mascot/barbero.webp" alt="Chispa, el barbero de Pulso" width={288} height={438} className="pointer-events-none h-auto w-20 shrink-0" />
           <motion.div key={step} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="relative mb-2 rounded-2xl rounded-bl-sm bg-white px-3.5 py-2.5 text-sm font-semibold text-[#070B14]">{tip.text}</motion.div>
         </div>
 
