@@ -10,9 +10,12 @@ export function stripeClient(): Stripe | null {
 }
 export const billingReady = () => Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim());
 
+/** Quita de un texto cualquier clave de Stripe (sk_/rk_/pk_ …) antes de registrarlo. */
+export const redact = (m: string) => m.replace(/\b[a-z]{2}_(?:live|test)_[A-Za-z0-9*_]+/gi, "[clave]").slice(0, 300);
+
 /**
  * Convierte un fallo de Stripe (o de nuestra base) en un mensaje claro para el dueño y lo deja en los logs.
- * El log lleva tipo, código, estado HTTP y `requestId` (para buscarlo en el panel de Stripe), nunca el texto del error:
+ * El log lleva tipo, código, estado HTTP y `requestId` (para buscarlo en el panel de Stripe), el texto del error solo en «solicitud inválida» y redactado:
  * un error de permisos de Stripe incluye el prefijo de la clave.
  */
 export function stripeFailure(where: string, e: unknown, ctx: Record<string, string> = {}): { status: number; message: string } {
@@ -20,7 +23,9 @@ export function stripeFailure(where: string, e: unknown, ctx: Record<string, str
   const ref = se?.requestId ? ` (ref. ${se.requestId})` : "";
   console.error(JSON.stringify({
     evt: "stripe_error", where, ...ctx, name: e instanceof Error ? e.name : "unknown",
-    ...(se ? { type: se.type, code: se.code, statusCode: se.statusCode, requestId: se.requestId }
+    ...(se ? { type: se.type, code: se.code, statusCode: se.statusCode, requestId: se.requestId,
+               // Solo en «solicitud inválida» (moneda no admitida, parámetro mal puesto): el texto no trae claves, y aun así se redactan por si acaso.
+               ...(se instanceof Stripe.errors.StripeInvalidRequestError ? { param: se.param, detail: redact(se.message) } : {}) }
            : { detail: e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200) }),
   }));
   if (e instanceof Stripe.errors.StripePermissionError || e instanceof Stripe.errors.StripeAuthenticationError)

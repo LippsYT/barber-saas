@@ -56,3 +56,8 @@ describe("ensureCurrencyOptions", () => {
     expect(update).not.toHaveBeenCalled();
   });
 });
+
+import { redact } from "./billing";
+describe("redact", () => {
+  it("quita claves de Stripe del texto", () => { expect(redact("bad key rk_live_ABC123**** y sk_test_xyz")).toBe("bad key [clave] y [clave]"); });
+});
