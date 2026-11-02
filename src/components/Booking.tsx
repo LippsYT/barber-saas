@@ -133,6 +133,7 @@ export function Booking({ slug, barberSlug, previewCatalog, initialStep = 0, pre
         <div className="mx-auto max-w-lg px-4 pt-[calc(1rem+var(--sat))]">
           <div className="mb-4 flex items-center justify-between"><Logo light className="text-xl" /><span className="pill bg-white/15 text-white">Reserva online</span></div>
           {b.cover_url && <img src={b.cover_url} alt="" className="mb-4 h-44 w-full rounded-3xl object-cover" />}
+          {b.logo_url && <img src={b.logo_url} alt={`Logotipo de ${b.name}`} className="mb-3 h-20 w-20 rounded-2xl object-cover ring-2 ring-white/30" />}
           <h1 className="display break-words text-5xl">{b.name}</h1>
           {b.address && <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.name} ${b.address}`)}`} target="_blank" rel="noreferrer" className="mt-2 flex items-start gap-1.5 text-sm text-white/80 underline-offset-2 hover:underline"><MapPin className="mt-0.5 h-4 w-4 shrink-0" />{b.address}</a>}
           <div className="mt-4 flex gap-2">
