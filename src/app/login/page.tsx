@@ -12,10 +12,11 @@ export default function Login() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [invited, setInvited] = useState(false);
+  const [forgot, setForgot] = useState(false);
   const [sent, setSent] = useState(false); const [cool, setCool] = useState(0);
   useEffect(() => {
     const q = new URLSearchParams(location.search);
-    setSignup(q.get("modo") === "registro");
+    setSignup(q.get("modo") === "registro"); setForgot(q.get("modo") === "olvide");
     // Enlace de invitación del equipo: trae el correo con el que la barbería registró a la persona.
     const c = q.get("correo");
     if (c && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) { setEmail(c); setInvited(true); }
@@ -26,6 +27,15 @@ export default function Login() {
     const { error } = await sb().auth.resend({ type: "signup", email });
     if (error) return setMsg(errEs(error));
     setCool(60); setMsg("Te lo enviamos de nuevo. Revisa también spam o promociones.");
+  }
+
+  /** «Olvidé mi contraseña»: siempre se responde lo mismo, exista o no el correo (no se revela quién tiene cuenta). */
+  async function sendReset(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setMsg("");
+    const { error } = await sb().auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/login/restablecer` });
+    setBusy(false);
+    if (error && !/not found|invalid/i.test(error.message)) return setMsg(errEs(error));
+    setSent(true); setCool(60); setMsg("Si ese correo tiene cuenta, te enviamos un enlace para crear una contraseña nueva. Revisa también spam o promociones.");
   }
 
   async function afterLogin() {
@@ -53,6 +63,18 @@ export default function Login() {
       await afterLogin();
     } catch (err) { setMsg(errEs(err)); } finally { setBusy(false); }
   }
+  if (forgot) return (
+    <main>
+      <h1 className="h1">Restablecer contraseña</h1>
+      <form onSubmit={sendReset} className="space-y-3">
+        <p className="text-sm text-muted-foreground">Escribe el correo de tu cuenta y te enviamos un enlace para crear una contraseña nueva.</p>
+        <div><label className="lbl">Correo</label><input className="inp" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+        <button className="btn-gold w-full" disabled={busy || cool > 0}>{busy ? "Un momento…" : cool > 0 ? `Reenviar enlace (${cool} s)` : sent ? "Reenviar enlace" : "Enviar enlace"}</button>
+        {msg && <p className={`text-sm ${sent ? "text-[#0B5B2B]" : "text-red-600"}`}>{msg}</p>}
+        <button type="button" className="text-sm underline" onClick={() => { setForgot(false); setSent(false); setMsg(""); }}>Volver a entrar</button>
+      </form>
+    </main>
+  );
   return (
     <main>
       <h1 className="h1">{signup ? "Crear cuenta" : "Entrar"}</h1>
@@ -64,6 +86,7 @@ export default function Login() {
         {msg && <p className={`text-sm ${sent ? "text-[#0B5B2B]" : "text-red-600"}`}>{msg}</p>}
         {sent && <button type="button" className="btn2 w-full" disabled={cool > 0} onClick={resend}>{cool > 0 ? `Reenviar correo (${cool} s)` : "Reenviar correo"}</button>}
         {sent && <p className="text-xs text-muted-foreground">Si no lo ves en unos minutos, revisa spam o promociones. ¿Sigue sin llegar? Escríbenos a soporte.</p>}
+        {!signup && <button type="button" className="block text-sm underline" onClick={() => { setForgot(true); setMsg(""); }}>¿Olvidaste tu contraseña?</button>}
         <button type="button" className="text-sm underline" onClick={() => setSignup(!signup)}>
           {signup ? "Ya tengo cuenta" : "Soy nuevo / me invitaron: crear cuenta"}
         </button>

@@ -2,6 +2,7 @@ import type { WhatsAppProvider } from "@/lib/whatsapp/types";
 import { allowedToSend, digits, type SendPolicy } from "./allowlist";
 import { emailSubject, type EmailProvider } from "./email";
 import { plainText, withBase } from "./templates";
+import { brandedEmail, whatsappToHtml } from "./emailHtml";
 
 export interface ClaimedMessage {
   id: string; business_id: string; kind: string; to_phone: string | null; body: string | null; attempts: number; instance_name: string | null;
@@ -54,7 +55,13 @@ async function sendEmail(m: ClaimedMessage, d: EmailDeps): Promise<string | unde
   if (!allowedToSend(m.to_email, d.policy)) return "skipped";
   try {
     const ics = m.kind === "confirmation" && d.ics ? await d.ics(m) : undefined;
-    const r = await d.provider.send({ to: m.to_email, subject: emailSubject(m.kind, d.business?.(m.business_id) ?? "la barbería"), text: plainText(m.body), ics });
+    const business = d.business?.(m.business_id) ?? "la barbería";
+    const html = brandedEmail({
+      title: m.kind === "cancellation" ? "Tu cita fue cancelada" : "¡Tu cita está confirmada!",
+      preheader: emailSubject(m.kind, business), rawHtml: whatsappToHtml(m.body),
+      note: m.kind === "confirmation" ? "Te dejamos la cita en el archivo adjunto para que la agregues a tu calendario." : undefined,
+    });
+    const r = await d.provider.send({ to: m.to_email, subject: emailSubject(m.kind, business), text: plainText(m.body), html, ics });
     return `sent:${r.id}`;
   } catch (e) { return `failed:${((e as Error).message ?? "").slice(0, 120)}`; }
 }

@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import { workerRpc } from "@/lib/workerRpc";
 import { addDays, localDate, localToUtcMs } from "@/lib/time";
 import { formatMoney } from "@/lib/money";
+import { brandedEmail } from "@/lib/messaging/emailHtml";
 import { emailPolicy, getEmailProvider } from "@/lib/messaging/email";
 import { allowedToSend } from "@/lib/messaging/allowlist";
 
@@ -91,6 +92,12 @@ export async function sendWeeklyReport(t: ReportTarget): Promise<"sent" | "skipp
     to: t.owner_email,
     subject: `Informe semanal de ${t.name} · ${period.label}`,
     text: `Hola,\n\nAdjuntamos el informe semanal de ${t.name} (${period.label}).\n\nIngresos: ${formatMoney(d.income, t.currency)}\nGastos: ${formatMoney(d.expenses, t.currency)}\n\nPuedes apagar este correo en Pulso → Mensajes automáticos.\n`,
+    html: brandedEmail({
+      title: "Tu informe semanal", preheader: `${t.name} · ${period.label}`,
+      paragraphs: [`Hola, te adjuntamos el informe semanal de ${t.name} (${period.label}) en PDF.`],
+      rows: [["Ingresos", formatMoney(d.income, t.currency)], ["Gastos", formatMoney(d.expenses, t.currency)]],
+      note: "Puedes apagar este correo en Pulso → Mensajes automáticos.",
+    }),
     attachments: [{ filename: `informe-${period.from.slice(0, 10)}.pdf`, content: Buffer.from(pdf).toString("base64"), contentType: "application/pdf" }],
   });
   return "sent";
