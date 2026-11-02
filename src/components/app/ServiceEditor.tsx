@@ -96,7 +96,7 @@ export function ServiceEditor({
                   <span className="flex items-center gap-2 font-semibold"><input type="checkbox" className="h-5 w-5 accent-[#2F5BFF]" checked={d.selected} onChange={(e) => patchDraft(d.memberId, { selected: e.target.checked })} />{name}</span>
                   <span className="flex rounded-full bg-white/10 p-1 text-xs font-extrabold">
                     {(["percent", "fixed"] as CommissionKind[]).map((k) => (
-                      <button type="button" key={k} className={`rounded-full px-3 py-1 ${d.kind === k ? "bg-white text-ink" : "text-white/70"}`} onClick={() => patchDraft(d.memberId, { kind: k, value: k === "percent" ? 30 : Math.round(priceCents * 0.3) })}>{k === "percent" ? "%" : "USD"}</button>
+                      <button type="button" key={k} className={`rounded-full px-3 py-1 ${d.kind === k ? "bg-white text-ink" : "text-white/70"}`} onClick={() => patchDraft(d.memberId, { kind: k, value: k === "percent" ? 30 : Math.round(priceCents * 0.3) })}>{k === "percent" ? "%" : currency}</button>
                     ))}
                   </span>
                 </label>

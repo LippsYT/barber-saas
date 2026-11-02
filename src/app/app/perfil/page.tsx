@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import { sb, errEs } from "@/lib/supabase";
+import { CURRENCIES } from "@/lib/money";
 import { useApp } from "@/components/ctx";
 import { uploadBusinessImage } from "@/lib/imageUpload";
 import { isReservedSlug } from "@/lib/reserved";
@@ -12,7 +13,7 @@ type Img = { id: string; url: string };
 export default function Perfil() {
   const { biz, role } = useApp();
   const isOwner = role === "owner";
-  const [f, setF] = useState({ name: biz.name, phone: "", address: "", cover_url: "" });
+  const [f, setF] = useState({ name: biz.name, phone: "", address: "", cover_url: "", currency: biz.currency });
   const [gallery, setGallery] = useState<Img[]>([]);
   const [slug, setSlug] = useState(biz.slug);
   const [busy, setBusy] = useState(""); const [err, setErr] = useState(""); const [ok, setOk] = useState("");
@@ -20,10 +21,10 @@ export default function Perfil() {
 
   const load = async () => {
     const [{ data: b }, { data: g }] = await Promise.all([
-      sb().from("businesses").select("name,phone,address,cover_url").eq("id", biz.id).single(),
+      sb().from("businesses").select("name,phone,address,cover_url,currency").eq("id", biz.id).single(),
       sb().from("portfolio_images").select("id,url").eq("business_id", biz.id).order("sort_order").order("created_at"),
     ]);
-    if (b) setF({ name: b.name ?? "", phone: b.phone ?? "", address: b.address ?? "", cover_url: b.cover_url ?? "" });
+    if (b) setF({ name: b.name ?? "", phone: b.phone ?? "", address: b.address ?? "", cover_url: b.cover_url ?? "", currency: b.currency ?? biz.currency });
     setGallery((g ?? []) as Img[]);
   };
   useEffect(() => { load(); }, []);
@@ -32,9 +33,11 @@ export default function Perfil() {
     e?.preventDefault(); setErr(""); setOk("");
     const next = { ...f, ...patch };
     if (next.name.trim().length < 2) return setErr("Escribe el nombre del negocio.");
-    const { error } = await sb().from("businesses").update({ name: next.name.trim(), phone: next.phone.trim() || null, address: next.address.trim() || null, cover_url: next.cover_url || null }).eq("id", biz.id);
+    const { error } = await sb().from("businesses").update({ name: next.name.trim(), phone: next.phone.trim() || null, address: next.address.trim() || null, cover_url: next.cover_url || null, currency: next.currency }).eq("id", biz.id);
     if (error) return setErr(errEs(error));
     setF(next); setOk("Guardado.");
+    // La moneda vive en el contexto de toda la app: se recarga para que todas las pantallas la tomen.
+    if (next.currency !== biz.currency) setTimeout(() => location.reload(), 600);
   }
   async function pickCover(file: File) {
     setBusy("cover"); setErr("");
@@ -84,6 +87,9 @@ export default function Perfil() {
           <label className="block min-w-0"><span className="lbl">Nombre del negocio</span><input className="inp" required disabled={!isOwner} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
           <label className="block min-w-0"><span className="lbl">WhatsApp / teléfono</span><input className="inp" type="tel" disabled={!isOwner} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></label>
           <label className="block min-w-0"><span className="lbl">Dirección</span><input className="inp" disabled={!isOwner} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></label>
+          <label className="block min-w-0"><span className="lbl">Moneda de tus precios</span>
+            <select className="inp" disabled={!isOwner} value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })}>{Object.entries(CURRENCIES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}</select>
+            <span className="mt-1 block text-xs text-ink/60">Cambiar la moneda no convierte los precios que ya cargaste: revísalos en Servicios.</span></label>
           {isOwner && <button className="btn w-full">Guardar cambios</button>}
         </form>
       </section>

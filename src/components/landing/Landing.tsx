@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, ChevronDown, Bell, MessageCircle } from "lucide-react";
+import { ADDONS, BASE_FEATURES, BASE_PRICE, PLAN_NAME } from "@/lib/addons";
+import { formatUsd } from "@/lib/money";
 import { Logo } from "@/components/brand/Logo";
 import { Chispa } from "@/components/brand/Mascot";
 import { Depth, HeroShapes, Phone3D, Stage3D } from "./Scene3D";
@@ -44,15 +46,15 @@ function Kicker({ n, label, light = false }: { n: string; label: string; light?:
 }
 
 const PLANS = [
-  { name: "Silla", price: 19, who: "Hasta 3 barberos", feats: ["Agenda y link de reservas", "Link por barbero", "Caja con cierre explicado", "Comisiones por servicio", "Clientes con WhatsApp"] },
-  { name: "Casa", price: 39, who: "Hasta 10 barberos", feats: ["Todo lo de Silla", "Roles de admin y recepción", "Libro de caja con anulaciones", "Límites de gastos por rol", "Soporte por WhatsApp"], featured: true },
+  { name: PLAN_NAME, price: BASE_PRICE, who: "Todo lo que necesita la barbería", feats: BASE_FEATURES, featured: true },
+  { name: "Complementos", price: ADDONS[0].price, who: "Cada uno, solo si lo necesitas", feats: ADDONS.map((x) => x.name) },
 ];
 const FAQ = [
   ["¿Necesito instalar algo?", "No. Pulso abre en el navegador del celular o del computador. Puedes dejarlo en la pantalla de inicio."],
   ["¿Mis clientes crean una cuenta para reservar?", "No. Eligen fecha, barbero, servicio y horario, y dejan su nombre y WhatsApp."],
-  ["¿Cómo se calculan las comisiones?", "Hay una regla del negocio y, si quieres, una por barbero y servicio: porcentaje o un monto fijo en dólares. En cada cobro, “ver cálculo” muestra la cuenta."],
+  ["¿Cómo se calculan las comisiones?", "Hay una regla del negocio y, si quieres, una por barbero y servicio: porcentaje o un monto fijo en tu moneda. En cada cobro, “ver cálculo” muestra la cuenta."],
   ["¿Puedo borrar una venta mal hecha?", "No se borra. Se anula con un asiento inverso y un motivo. La caja conserva la historia."],
-  ["¿El precio es en dólares?", "Sí. US$ 19 al mes hasta 3 barberos y US$ 39 hasta 10. Sin permanencia."],
+  ["¿Cuánto cuesta y en qué moneda?", "Pulso se cobra en dólares: US$ 15 al mes el plan y US$ 15 al mes cada complemento que actives. Los primeros 15 días son gratis con todo incluido y sin permanencia. Los precios de tus servicios los pones en la moneda de tu país: pesos, soles, dólares y más."],
 ];
 
 export function Landing() {
@@ -82,7 +84,7 @@ export function Landing() {
           <h1 className="display text-6xl sm:text-7xl md:text-8xl" style={{ perspective: 800 }}>
             <Line i={0}>Corta.</Line><br /><Line i={1}>Cobra.</Line><br /><Line i={2}><span className="bg-[#D6FF4A] px-2 text-ink">Repite.</span></Line>
           </h1>
-          <p className="mt-6 max-w-md text-lg text-white/85">La agenda, la caja y las reservas de tu barbería, en un solo pulso. En dólares. Desde el celular.</p>
+          <p className="mt-6 max-w-md text-lg text-white/85">La agenda, la caja y las reservas de tu barbería, en un solo pulso. En la moneda de tu país. Desde el celular.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/login?modo=registro" className="btn-gold">Empieza hoy <ArrowRight className="h-4 w-4" /></Link>
             <a href="#reservas" className="inline-flex items-center rounded-full border border-white/30 px-5 py-3 font-semibold">Ver la agenda</a>
@@ -223,15 +225,15 @@ export function Landing() {
         <div className="mx-auto max-w-6xl">
           <Kicker n="06" label="Precios" light />
           <h2 className="display max-w-3xl text-5xl sm:text-7xl">Empieza<br /><span className="bg-[#D6FF4A] px-2 text-ink">hoy.</span></h2>
-          <p className="mt-4 max-w-lg text-white/80">Dos planes. Dólares. Sin letra chica de permanencia.</p>
+          <p className="mt-4 max-w-lg text-white/80">15 días gratis con todo incluido. Después, un plan y los complementos que quieras. Sin permanencia.</p>
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             {PLANS.map((p) => (
               <article key={p.name} className={`rounded-[2rem] p-6 ${p.featured ? "bg-white text-ink" : "bg-ink text-white"}`}>
-                <div className="flex items-center justify-between"><span className="pill bg-[#2F5BFF] text-white">{p.name}</span>{p.featured && <span className="pill bg-[#D6FF4A] text-ink">El más pedido</span>}</div>
-                <div className="mt-6 flex items-end gap-2"><span className="display text-7xl">US$ {p.price}</span><span className="mb-2 text-sm opacity-60">/ mes</span></div>
+                <div className="flex items-center justify-between"><span className="pill bg-[#2F5BFF] text-white">{p.name}</span>{p.featured && <span className="pill bg-[#D6FF4A] text-ink">15 días gratis</span>}</div>
+                <div className="mt-6 flex items-end gap-2">{p.name === "Complementos" && <span className="mb-2 text-sm opacity-60">desde</span>}<span className="display text-7xl">{formatUsd(p.price).replace(".00", "")}</span><span className="mb-2 text-sm opacity-60">/ mes</span></div>
                 <div className="font-bold">{p.who}</div>
                 <ul className="mt-5 space-y-2 text-sm">{p.feats.map((f) => <li key={f} className="flex gap-2"><Check className="h-4 w-4 shrink-0 text-[#2F5BFF]" />{f}</li>)}</ul>
-                <Link href="/login?modo=registro" className={`mt-6 w-full ${p.featured ? "btn" : "btn-gold"}`}>Crear mi barbería</Link>
+                <Link href="/login?modo=registro" className={`mt-6 w-full ${p.featured ? "btn" : "btn-gold"}`}>Probar 15 días gratis</Link>
               </article>
             ))}
           </div>
@@ -257,7 +259,7 @@ export function Landing() {
       <footer className="bg-ink px-5 py-10 text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
           <Logo light />
-          <p className="text-sm text-white/60">Agenda, caja y reservas para barberías. Montos en dólares.</p>
+          <p className="text-sm text-white/60">Agenda, caja y reservas para barberías. Precios en la moneda de tu país.</p>
           <Link href="/login?modo=registro" className="btn-gold py-2 text-sm">Crear cuenta</Link>
         </div>
         <nav className="mx-auto mt-6 flex max-w-6xl flex-wrap gap-x-5 gap-y-1 border-t border-white/10 pt-4 text-sm font-bold text-white/70"><Link href="/terminos">Términos</Link><Link href="/privacidad">Privacidad</Link><Link href="/soporte">Soporte</Link></nav>

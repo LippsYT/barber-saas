@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { sb } from "@/lib/supabase";
+import { setCurrency } from "@/lib/money";
 import { AppCtx, type Ctx } from "@/components/ctx";
 import { CalendarDays, Wallet, Users, Calculator, BookOpen, BarChart3, LogOut, Settings, type LucideIcon } from "lucide-react";
 import { applySavedTheme } from "@/components/app/ThemeToggle";
@@ -47,6 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (bill) setBilling(bill as Billing);
     setCtx({ biz: m.business, role, memberId: m.id, userId: u.user.id, isManager: role === "owner" || role === "admin", canCash: role !== "barber" });
   })(); }, [router]);
+  setCurrency(ctx?.biz.currency);
   if (!ctx) return <><Splash ready={false} /><div className="grid min-h-screen place-items-center bg-ink text-white"><Logo light /></div></>;
   const nav: [string, string, boolean, LucideIcon][] = [
     ["/app", "Inicio", true, CalendarDays], ["/app/agenda", "Agenda", true, CalendarDays], ["/app/cobro", "Cobrar", ctx.canCash, Wallet], ["/app/caja", "Caja", ctx.canCash, Calculator],

@@ -10,7 +10,7 @@ import { WhatsAppConnect } from "@/components/app/WhatsAppConnect";
 import { saveServiceBundle } from "@/lib/saveService";
 import { Logo } from "@/components/brand/Logo";
 
-const TZ = [["America/Guayaquil", "Ecuador"], ["America/Bogota", "Colombia"], ["America/Argentina/Buenos_Aires", "Argentina"], ["America/Mexico_City", "México"], ["America/Santiago", "Chile"], ["America/Lima", "Perú"], ["America/New_York", "EE. UU. (Este)"]] as const;
+const TZ = [["America/Guayaquil", "Ecuador", "USD"], ["America/Bogota", "Colombia", "COP"], ["America/Argentina/Buenos_Aires", "Argentina", "ARS"], ["America/Mexico_City", "México", "MXN"], ["America/Santiago", "Chile", "CLP"], ["America/Lima", "Perú", "PEN"], ["America/New_York", "EE. UU. (Este)", "USD"]] as const;
 const STEPS = ["Tu barbería", "Logotipo", "Equipo", "Servicios", "Horario", "Contacto", "WhatsApp", "Listo"] as const;
 const TIPS: { text: string }[] = [
   { text: "¡Hola! Te dejo todo listo en unos minutos. Empecemos por el nombre." },
@@ -23,7 +23,7 @@ const TIPS: { text: string }[] = [
   { text: "¡Todo listo! Tu barbería ya puede recibir reservas." },
 ];
 
-/** Servicios de ejemplo para elegir con un toque. Precios en dólares, editables. */
+/** Servicios de ejemplo para elegir con un toque. Los precios de ejemplo son en dólares: en otra moneda se dejan vacíos para que pongan los suyos. */
 const QUICK = [
   { key: "corte", name: "Corte clásico", price: "8", duration: 30 },
   { key: "barba", name: "Barba", price: "5", duration: 20 },
@@ -110,7 +110,7 @@ export default function Onboarding() {
       if (error) return fail(errEs(error));
       setBiz({ ...biz, name: shop.trim() }); setBusy(false); return go(1);
     }
-    const { data, error } = await sb().rpc("create_business", { p_name: shop, p_slug: "", p_display_name: me, p_timezone: TZ[tz][0], p_currency: "USD", p_owner_bookable: bookable });
+    const { data, error } = await sb().rpc("create_business", { p_name: shop, p_slug: "", p_display_name: me, p_timezone: TZ[tz][0], p_currency: TZ[tz][2], p_owner_bookable: bookable });
     if (error) return fail(errEs(error));
     const { data: row } = await sb().from("businesses").select("id, slug, name, trial_ends_at").eq("id", data).single();
     const b = row as unknown as Biz & { trial_ends_at: string | null };
@@ -159,6 +159,10 @@ export default function Onboarding() {
   }
 
   // ——— Paso 4: servicios
+  useEffect(() => {
+    const usd = TZ[tz][2] === "USD";
+    setPicked((p) => Object.fromEntries(QUICK.map((q) => [q.key, { on: p[q.key]?.on ?? false, price: usd ? q.price : "" }])));
+  }, [tz]);
   const chosen = useMemo(() => QUICK.filter((q) => picked[q.key]?.on && !existing.includes(q.name.toLowerCase())), [picked, existing]);
   const customReady = custom.filter((c) => c.name.trim());
   async function saveServices() {
