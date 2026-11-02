@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseFromCookies } from "@/lib/supabase-server";
-import { addonPriceId, addonsOfSubscription, billingReady, billingRpc, stripeClient } from "@/lib/billing";
+import { addonPriceId, addonsOfSubscription, billingReady, billingRpc, stripeClient, stripeFailure } from "@/lib/billing";
 import { addonOf, isAddonKey, keyFromLookup, withNeeds, type AddonKey } from "@/lib/addons";
 import { appBaseUrl } from "@/lib/messaging/templates";
 import { guard } from "@/lib/guard";
@@ -75,8 +75,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ addons: addonsOfSubscription(fresh) });
     }
   } catch (e) {
-    console.error("billing", e instanceof Error ? e.name : "error"); // sin el texto de Stripe: no se muestra al cliente
-    return fail(502, "No se pudo hablar con Stripe. Intenta de nuevo en un momento.");
+    const f = stripeFailure(`billing:${String(body.action)}`, e, { business: row.business.id });
+    return fail(f.status, f.message);
   }
   return fail(400, "Acción desconocida.");
 }

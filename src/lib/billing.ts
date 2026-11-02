@@ -9,6 +9,30 @@ export function stripeClient(): Stripe | null {
 }
 export const billingReady = () => Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim());
 
+/**
+ * Convierte un fallo de Stripe (o de nuestra base) en un mensaje claro para el dueño y lo deja en los logs.
+ * El log lleva tipo, código, estado HTTP y `requestId` (para buscarlo en el panel de Stripe), nunca el texto del error:
+ * un error de permisos de Stripe incluye el prefijo de la clave.
+ */
+export function stripeFailure(where: string, e: unknown, ctx: Record<string, string> = {}): { status: number; message: string } {
+  const se = e instanceof Stripe.errors.StripeError ? e : null;
+  const ref = se?.requestId ? ` (ref. ${se.requestId})` : "";
+  console.error(JSON.stringify({
+    evt: "stripe_error", where, ...ctx, name: e instanceof Error ? e.name : "unknown",
+    ...(se ? { type: se.type, code: se.code, statusCode: se.statusCode, requestId: se.requestId }
+           : { detail: e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200) }),
+  }));
+  if (e instanceof Stripe.errors.StripePermissionError || e instanceof Stripe.errors.StripeAuthenticationError)
+    return { status: 502, message: `Hay un problema con la configuración de pagos de Pulso. Ya quedó registrado: escríbenos a soporte y lo arreglamos${ref}.` };
+  if (e instanceof Stripe.errors.StripeRateLimitError)
+    return { status: 429, message: "Hay muchas solicitudes de pago en este momento. Espera un minuto e intenta de nuevo." };
+  if (e instanceof Stripe.errors.StripeConnectionError)
+    return { status: 502, message: "No pudimos conectar con Stripe. Revisa tu internet e intenta de nuevo en un momento." };
+  if (se)
+    return { status: 502, message: `Stripe no pudo completar la operación. Ya quedó registrado: si se repite, escríbenos a soporte${ref}.` };
+  return { status: 502, message: "No pudimos completar la operación de pago. Ya quedó registrado: si se repite, escríbenos a soporte." };
+}
+
 /** Precio mensual de Stripe de un complemento. Se busca por `lookup_key` y, si no existe, se crea la primera vez. */
 export async function addonPriceId(stripe: Stripe, key: AddonKey): Promise<string> {
   const lookup = addonLookupKey(key);
