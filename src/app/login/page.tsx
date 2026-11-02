@@ -39,6 +39,12 @@ export default function Login() {
       if (signup) {
         const { data, error } = await sb().auth.signUp({ email, password });
         if (error) throw error;
+        // Si el correo ya tiene cuenta, Supabase responde "ok" sin enviar nada y sin identidades: se le dice la verdad y se pasa a entrar.
+        if (!data.session && data.user && (data.user.identities ?? []).length === 0) {
+          setSignup(false); setSent(false);
+          setMsg("Ese correo ya tiene una cuenta, por eso no te enviamos otro correo. Entra con tu contraseña. Si tu barbería te invitó, quedarás dentro al entrar.");
+          return;
+        }
         if (!data.session) { setSent(true); setCool(60); setMsg("Te enviamos un correo para confirmar tu cuenta. Ábrelo, confírmalo y luego entra aquí con tu correo y contraseña."); return; }
       } else {
         const { error } = await sb().auth.signInWithPassword({ email, password });
