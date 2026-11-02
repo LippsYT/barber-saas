@@ -7,9 +7,10 @@ import { formatMoney } from "@/lib/money";
 import { localDate } from "@/lib/time";
 import { PeriodPicker, periodRange, type PeriodKind } from "@/components/Period";
 import { CommissionBreakdown } from "@/components/CommissionBreakdown";
+import { MyAdvances } from "@/components/app/Advances";
 
 export default function Reportes() {
-  const { biz, role } = useApp();
+  const { biz, role, memberId } = useApp();
   const [kind, setKind] = useState<PeriodKind>("day"); const [anchor, setAnchor] = useState(localDate(Date.now(), biz.timezone));
   const [rows, setRows] = useState<any[]>([]); const [comm, setComm] = useState<any[]>([]); const [exp, setExp] = useState(0); const [open, setOpen] = useState<string | null>(null);
   useEffect(() => { (async () => {
@@ -31,6 +32,7 @@ export default function Reportes() {
     <main>
       <h1 className="h1">{role === "barber" ? "Mis servicios y comisiones" : "Reportes"}</h1>
       {role !== "barber" && <Link href="/app/caja?tab=reportes" className="btn2 mb-3">Ingresos, gastos y cierre</Link>}
+      {role === "barber" && <MyAdvances memberId={memberId} currency={biz.currency} />}
       <PeriodPicker kind={kind} setKind={setKind} anchor={anchor} setAnchor={setAnchor} tz={biz.timezone} />
       {role !== "barber" && <div className="card mb-3 font-mono text-sm">
         <div className="flex justify-between"><span>Ingresos por servicios (neto)</span><span>{formatMoney(tot.income, biz.currency)}</span></div>

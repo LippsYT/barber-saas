@@ -47,7 +47,7 @@ export default function Inicio() {
       { label: "Citas del mes", value: String(live.length) },
       { label: "Ticket promedio", value: nSales ? formatMoney(Math.round(cur / nSales)) : "US$ 0.00" },
       { label: "Ventas cobradas", value: String(nSales) },
-      { label: "Clientes nuevos", value: String(newClients ?? 0) },
+      ...(role === "barber" ? [] : [{ label: "Clientes nuevos", value: String(newClients ?? 0) }]),
     ]);
     setVisits(live.slice(0, 5).map((a) => ({
       id: a.id,

@@ -56,7 +56,7 @@ export default function Agenda() {
   const load = async () => {
     const from = new Date(localToUtcMs(start, "00:00", biz.timezone)).toISOString();
     const to = new Date(localToUtcMs(addDays(start, 7), "00:00", biz.timezone)).toISOString();
-    const { data } = await sb().from("appointments").select("*, client:clients(full_name, phone), member:memberships(display_name), items:appointment_items(name, price)")
+    const { data } = await sb().from("appointments").select(`*, client:clients(${role === "barber" ? "full_name" : "full_name, phone"}), member:memberships(display_name), items:appointment_items(name, price)`)
       .eq("business_id", biz.id).gte("starts_at", from).lt("starts_at", to).order("starts_at");
     setAppts(data ?? []);
     const ids = (data ?? []).map((a: { id: string }) => a.id);

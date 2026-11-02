@@ -6,6 +6,7 @@ import { useApp } from "@/components/ctx";
 import { Avatar } from "@/components/ui/avatar";
 import { formatMoney, toCents } from "@/lib/money";
 import { appBaseUrl } from "@/lib/messaging/templates";
+import { AdvanceApprovals } from "@/components/app/Advances";
 
 const ROLES = [["barber", "Barbero (comisión)"], ["receptionist", "Recepción (sueldo fijo)"], ["admin", "Admin"]] as const;
 const ROLE_ES: Record<string, string> = { owner: "Dueño", admin: "Admin", receptionist: "Recepción", barber: "Barbero" };
@@ -42,6 +43,8 @@ export default function Equipo() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [role, setRole] = useState("barber"); const [salary, setSalary] = useState("");
   const [err, setErr] = useState(""); const [ok, setOk] = useState(""); const [busyId, setBusyId] = useState("");
+  const [editing, setEditing] = useState("");
+  const [ed, setEd] = useState({ name: "", email: "", role: "barber", bookable: true, salary: "" });
   const pick = useRef<HTMLInputElement>(null); const pickFor = useRef("");
   const base = appBaseUrl();
   const load = async () => {
@@ -58,7 +61,30 @@ export default function Equipo() {
     setOk(email ? `Listo. ${name} debe crear su cuenta con ${email} en /login y entrará directo.` : `Listo. ${name} ya aparece en la agenda y en el link de reservas. Toca su foto para ponerle una.`);
     setName(""); setEmail(""); setSalary(""); setOpen(false); load();
   }
-  async function deactivate(m: any) { if (confirm(`¿Desactivar a ${m.display_name}?`)) { await sb().from("memberships").update({ active: false }).eq("id", m.id); load(); } }
+  async function deactivate(m: any) { if (confirm(`¿Desactivar a ${m.display_name}?`)) { const { error } = await sb().from("memberships").update({ active: false }).eq("id", m.id); if (error) setErr(errEs(error)); load(); } }
+  async function reactivate(m: any) { const { error } = await sb().from("memberships").update({ active: true }).eq("id", m.id); if (error) setErr(errEs(error)); load(); }
+  function startEdit(m: any) {
+    setErr(""); setOk(""); setEditing(m.id);
+    setEd({ name: m.display_name ?? "", email: m.invited_email ?? "", role: m.role, bookable: Boolean(m.is_bookable), salary: comp[m.id]?.fixed_salary ? String(Number(comp[m.id].fixed_salary) / 100) : "" });
+  }
+  async function saveEdit(e: React.FormEvent, m: any) {
+    e.preventDefault(); setErr(""); setOk("");
+    if (!ed.name.trim()) return setErr("Escribe el nombre.");
+    if (ed.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ed.email.trim())) return setErr("Ese correo no es válido.");
+    const patch: Record<string, unknown> = { display_name: ed.name.trim(), is_bookable: ed.bookable };
+    if (!m.user_id) patch.invited_email = ed.email.trim().toLowerCase() || null; // con usuario, el correo ya es el de su cuenta
+    if (m.role !== "owner") patch.role = ed.role;
+    const { error } = await sb().from("memberships").update(patch).eq("id", m.id);
+    if (error) return setErr(errEs(error));
+    if (m.role !== "owner" && ed.role === "receptionist" && ed.salary) {
+      const { error: e2 } = await sb().from("member_compensation").update({ pay_type: "fixed", fixed_salary: toCents(ed.salary), pay_period: "monthly" }).eq("member_id", m.id);
+      if (e2) return setErr(errEs(e2));
+    } else if (m.role !== "owner" && ed.role === "barber" && m.role !== "barber") {
+      const { error: e3 } = await sb().from("member_compensation").update({ pay_type: "commission" }).eq("member_id", m.id);
+      if (e3) return setErr(errEs(e3));
+    }
+    setEditing(""); setOk(`Guardamos los cambios de ${ed.name.trim()}.`); load();
+  }
   async function upload(file: File, m: any) {
     setErr(""); setBusyId(m.id);
     try {
@@ -84,6 +110,8 @@ export default function Equipo() {
         <p className="text-sm text-ink/60">Compártelo con tus clientes. Elegirán barbero, servicio y hora.</p>
         <CopyLink url={`${base}/${biz.slug}`} />
       </section>
+
+      {canEdit && <AdvanceApprovals bizId={biz.id} currency={biz.currency} />}
 
       {canEdit && (open ? (
         <form onSubmit={add} className="card mb-4 space-y-3">
@@ -122,11 +150,27 @@ export default function Equipo() {
           </div>
           {comp[m.id] && <div className="text-sm text-ink/70">{comp[m.id].pay_type === "commission" ? "Gana por comisión" : comp[m.id].pay_type === "fixed" ? `Sueldo ${formatMoney(comp[m.id].fixed_salary, biz.currency)} al mes` : "Sueldo mixto"}</div>}
           {m.booking_slug && <div><div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-ink/45">Su link de reservas</div><CopyLink url={`${base}/${biz.slug}/${m.booking_slug}`} /></div>}
-          {canEdit && m.role !== "owner" && <button className="btn2 w-full text-red-700" onClick={() => deactivate(m)}>Desactivar</button>}
+          {canEdit && (editing === m.id ? (
+            <form onSubmit={(e) => saveEdit(e, m)} className="space-y-3 rounded-2xl bg-ink/[0.04] p-3">
+              <label className="block"><span className="lbl">Nombre</span><input className="inp" required value={ed.name} onChange={(e) => setEd({ ...ed, name: e.target.value })} /></label>
+              {m.role !== "owner" && (myRole === "owner" || ["barber", "receptionist"].includes(m.role)) && <label className="block"><span className="lbl">Cargo</span>
+                <select className="inp" value={ed.role} onChange={(e) => setEd({ ...ed, role: e.target.value })}>{ROLES.filter((r) => myRole === "owner" || r[0] !== "admin").map((r) => <option key={r[0]} value={r[0]}>{r[1]}</option>)}</select></label>}
+              {ed.role === "receptionist" && m.role !== "owner" && <label className="block"><span className="lbl">Sueldo mensual (US$)</span><input className="inp" type="number" inputMode="decimal" min={0} step="0.01" value={ed.salary} onChange={(e) => setEd({ ...ed, salary: e.target.value })} /></label>}
+              {m.user_id ? <p className="text-xs text-ink/55">Ya tiene usuario: entra con el correo de su cuenta.</p>
+                : <label className="block"><span className="lbl">Correo (para que tenga su propio usuario)</span><input className="inp" type="email" placeholder="correo@ejemplo.com" value={ed.email} onChange={(e) => setEd({ ...ed, email: e.target.value })} /></label>}
+              <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-5 w-5" checked={ed.bookable} onChange={(e) => setEd({ ...ed, bookable: e.target.checked })} />Aparece en la agenda y recibe reservas</label>
+              <div className="flex gap-2"><button type="button" className="btn2 flex-1" onClick={() => setEditing("")}>Cancelar</button><button className="btn flex-1">Guardar</button></div>
+            </form>
+          ) : (
+            <div className="flex gap-2">
+              {(myRole === "owner" || ["barber", "receptionist"].includes(m.role)) && <button className="btn2 flex-1" onClick={() => startEdit(m)}>Editar</button>}
+              {m.role !== "owner" && <button className="btn2 flex-1 text-red-700" onClick={() => deactivate(m)}>Desactivar</button>}
+            </div>
+          ))}
         </li>))}
       </ul>
       {inactive.length > 0 && <details className="mt-4"><summary className="cursor-pointer text-sm font-semibold text-ink/55">Desactivados ({inactive.length})</summary>
-        <ul className="mt-2 space-y-2">{inactive.map((m) => <li key={m.id} className="card flex items-center gap-3 py-2 opacity-60"><Avatar name={m.display_name} src={m.avatar_url} size={40} /><span className="line-through">{m.display_name}</span></li>)}</ul></details>}
+        <ul className="mt-2 space-y-2">{inactive.map((m) => <li key={m.id} className="card flex items-center gap-3 py-2"><Avatar name={m.display_name} src={m.avatar_url} size={40} /><span className="min-w-0 flex-1 truncate text-ink/55 line-through">{m.display_name}</span>{canEdit && <button className="btn2 shrink-0 !px-4 !py-2 text-sm" onClick={() => reactivate(m)}>Reactivar</button>}</li>)}</ul></details>}
     </main>
   );
 }

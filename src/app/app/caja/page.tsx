@@ -9,6 +9,7 @@ import { periodRange, type PeriodKind } from "@/components/Period";
 import { serviceBreakdown, settleAccounts, type MethodSplit, type SettleResult } from "@/lib/caja";
 import { proratedFixed, type PayPeriod, type PayType } from "@/lib/payout";
 import { CajaCierreView, CajaHoyView, CajaReportesView, CajaTabs, SettleCard } from "@/components/app/caja/views";
+import { AdvanceApprovals } from "@/components/app/Advances";
 
 type Svc = { name: string; qty: number; unitPrice: number; total: number };
 type DayPayload = {
@@ -224,6 +225,7 @@ export default function Caja() {
 
   return (
     <main className="space-y-4">
+      {isManager && <AdvanceApprovals bizId={biz.id} currency={biz.currency} onDone={() => { void loadDay(); void loadAdvances(); }} />}
       <CajaTabs tab={tab} onTab={setTab} showAdvances={isManager} />
       {(tab === "hoy" || tab === "cerrar") && !dia && <p className="text-sm text-ink/50">Cargando el día…</p>}
       {tab === "hoy" && dia && (

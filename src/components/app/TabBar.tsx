@@ -14,8 +14,9 @@ export function TabBar({ path, canCash, open, onToggle, isManager = true, active
   const tabs: Tab[] = [
     { href: "/app", label: "Inicio", icon: Home },
     { href: "/app/agenda", label: "Agenda", icon: CalendarDays },
-    canCash ? { href: "/app/caja", label: "Caja", icon: Wallet } : { href: "/app/reportes", label: "Reportes", icon: BarChart3 },
-    { href: "/app/clientes", label: "Clientes", icon: Users },
+    canCash ? { href: "/app/caja", label: "Caja", icon: Wallet } : { href: "/app/reportes", label: "Comisiones", icon: BarChart3 },
+    // Quien no maneja caja (el barbero) no ve la lista de clientes: solo su agenda, sus comisiones y sus adelantos.
+    ...(canCash ? [{ href: "/app/clientes", label: "Clientes", icon: Users }] : []),
     ...(isManager ? [{ href: "/app/ajustes", label: "Ajustes", icon: Settings }] : []),
   ];
   const active = (h: string) => (activeFor ? activeFor(h) : path === h);

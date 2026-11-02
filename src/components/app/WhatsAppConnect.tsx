@@ -123,6 +123,7 @@ export function WhatsAppConnect({
                 : linkState === "unreachable" ? <><b>No pudimos consultar Evolution.</b> Reintentamos solos cada 4 s.</>
                 : <><b>Esperando a WhatsApp…</b> Estado: {linkState || "connecting"}. Pasamos a “¡Listo!” solo cuando WhatsApp confirme la conexión.</>}
               <button className="mt-2 block font-semibold text-[#1D3FD6] underline" disabled={busy} onClick={() => start()}>{busy ? "Pidiendo…" : "Pedir código nuevo"}</button>
+              <button className="mt-2 block font-semibold text-[#1D3FD6] underline" disabled={busy} onClick={() => { setErr(""); setStage("form"); }}>¿Te equivocaste de número? Cambiarlo</button>
             </div>
           );
         })()}

@@ -25,6 +25,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [ctx, setCtx] = useState<Omit<Ctx, "has"> | null>(null); const [more, setMore] = useState(false); const [entered, setEntered] = useState(false);
   useEffect(() => setMore(false), [path]);
   useEffect(() => setEntered(true), []);
+  // El barbero solo usa Inicio, Agenda y Mis comisiones: si abre a mano otra pantalla (clientes, cobro, caja, libro, ajustes) vuelve a sus comisiones.
+  useEffect(() => {
+    if (ctx?.role === "barber" && ["/app/clientes", "/app/cobro", "/app/caja", "/app/libro", "/app/ajustes"].some((p) => path === p || path.startsWith(`${p}/`))) router.replace("/app/reportes");
+  }, [ctx?.role, path, router]);
   // Tema claro/oscuro guardado; al salir de /app se quita para no afectar las páginas públicas.
   useEffect(() => { applySavedTheme(); return () => document.documentElement.classList.remove("app-dark"); }, []);
   useEffect(() => { (async () => {
@@ -42,9 +46,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   })(); }, [router]);
   if (!ctx) return <><Splash ready={false} /><div className="grid min-h-screen place-items-center bg-ink text-white"><Logo light /></div></>;
   const nav: [string, string, boolean, LucideIcon][] = [
-    ["/app", "Inicio", true, CalendarDays], ["/app/agenda", "Agenda", true, CalendarDays], ["/app/cobro", "Cobrar", true, Wallet], ["/app/caja", "Caja", ctx.canCash, Calculator],
+    ["/app", "Inicio", true, CalendarDays], ["/app/agenda", "Agenda", true, CalendarDays], ["/app/cobro", "Cobrar", ctx.canCash, Wallet], ["/app/caja", "Caja", ctx.canCash, Calculator],
     ["/app/reportes", ctx.role === "barber" ? "Mis comisiones" : "Reportes", ctx.role !== "receptionist", BarChart3],
-    ["/app/clientes", "Clientes", true, Users], ["/app/libro", "Libro", ctx.isManager, BookOpen],
+    ["/app/clientes", "Clientes", ctx.canCash, Users], ["/app/libro", "Libro", ctx.isManager, BookOpen],
     ["/app/ajustes", "Ajustes", ctx.isManager, Settings],
   ];
   const items = nav.filter((n) => n[2]);
@@ -92,7 +96,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {more && <div className="fixed inset-0 z-20 bg-ink/40 md:hidden" onClick={() => setMore(false)}>
           <div className="absolute inset-x-4 bottom-app-nav space-y-2 rounded-3xl bg-white p-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <Link href="/app/agenda?nueva=1" className="btn w-full">Nueva cita</Link>
-            <Link href="/app/cobro" className="btn2 w-full">Nueva venta</Link>
+            {ctx.canCash && <Link href="/app/cobro" className="btn2 w-full">Nueva venta</Link>}
             {ctx.isManager && <Link href="/app/servicios" className="btn2 w-full">Nuevo servicio</Link>}
             <div className="grid grid-cols-3 gap-2 border-t border-black/5 pt-3">
               {items.filter(([h]) => ["/app/cobro", "/app/libro"].includes(h) || (h === "/app/reportes" && ctx.canCash)).map(([h, l, , I]) => (
