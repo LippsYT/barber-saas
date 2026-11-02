@@ -1,6 +1,7 @@
 -- El envío de WhatsApp también exige el complemento al momento de enviar, no solo al programar.
 -- Antes: si un negocio quitaba WhatsApp (o su plan se vencía) con mensajes ya programados, esos salían igual.
 -- Ahora: lo pendiente de un negocio sin el complemento se descarta como 'skipped' (error addon_required) y no se envía.
+-- Además, un negocio solo envía por su propio WhatsApp conectado; la instancia de respaldo ya no sirve a negocios ajenos.
 CREATE OR REPLACE FUNCTION public.msg_claim(p_secret text, p_limit integer DEFAULT 20, p_appointment uuid DEFAULT NULL::uuid, p_id uuid DEFAULT NULL::uuid, p_fallback_instance text DEFAULT NULL::text)
  RETURNS TABLE(id uuid, business_id uuid, kind text, to_phone text, body text, attempts integer, instance_name text, to_email text, appointment_id uuid, short_token text, media text)
  LANGUAGE plpgsql
@@ -27,7 +28,9 @@ begin
     returning s.id, s.business_id, s.kind, s.to_phone, s.payload->>'body' as body, s.attempts, s.client_id, s.appointment_id, s.payload->>'media' as media
   )
   select u.id, u.business_id, u.kind, u.to_phone, u.body, u.attempts,
-         coalesce((select w.instance_name from whatsapp_links w where w.business_id = u.business_id and w.status = 'connected' and not w.demo), nullif(p_fallback_instance, '')),
+         coalesce((select w.instance_name from whatsapp_links w where w.business_id = u.business_id and w.status = 'connected' and not w.demo),
+                  -- La instancia de respaldo solo vale para el negocio al que pertenece (pulso-<su enlace>): ningún otro negocio sale por ella.
+                  (select nullif(p_fallback_instance, '') from businesses b where b.id = u.business_id and nullif(p_fallback_instance, '') = left('pulso-' || b.slug, 40))),
          (select cl.email from clients cl where cl.id = u.client_id), u.appointment_id,
          (select ap.short_token from appointments ap where ap.id = u.appointment_id), u.media
   from u;

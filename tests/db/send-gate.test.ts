@@ -32,4 +32,19 @@ describe("El envío de WhatsApp exige el complemento", () => {
     const id = await queue();
     expect((await claim()).map((r) => r.id)).toContain(id);
   });
+  it("sin WhatsApp propio conectado no sale por la instancia de otro negocio", async () => {
+    const inst = async (fallback: string) => {
+      const id = await queue();
+      const got = await asUser(db, null, () => rows<{ id: string; instance_name: string | null }>(db, "select * from msg_claim($1, 20, null, null, $2)", [MESSAGES, fallback]));
+      return got.find((r) => r.id === id)?.instance_name ?? null;
+    };
+    expect(await inst("pulso-lumos-studio")).toBeNull();
+    expect(await inst("pulso-barberia-test")).toBe("pulso-barberia-test");
+  });
+  it("con su WhatsApp conectado usa el suyo, no el de respaldo", async () => {
+    await rows(db, "insert into whatsapp_links(business_id, phone, instance_name, status, demo, provider) values ($1, '593991112222', 'pulso-propio', 'connected', false, 'evolution') on conflict (business_id) do update set status='connected', demo=false, instance_name='pulso-propio'", [s.bid]);
+    const id = await queue();
+    const got = await asUser(db, null, () => rows<{ id: string; instance_name: string | null }>(db, "select * from msg_claim($1, 20, null, null, 'pulso-lumos-studio')", [MESSAGES]));
+    expect(got.find((r) => r.id === id)?.instance_name).toBe("pulso-propio");
+  });
 });
