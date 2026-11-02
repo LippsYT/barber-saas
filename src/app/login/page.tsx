@@ -11,7 +11,22 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setSignup(new URLSearchParams(location.search).get("modo") === "registro"); }, []);
+  const [invited, setInvited] = useState(false);
+  const [sent, setSent] = useState(false); const [cool, setCool] = useState(0);
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    setSignup(q.get("modo") === "registro");
+    // Enlace de invitación del equipo: trae el correo con el que la barbería registró a la persona.
+    const c = q.get("correo");
+    if (c && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) { setEmail(c); setInvited(true); }
+  }, []);
+  useEffect(() => { if (cool <= 0) return; const t = setTimeout(() => setCool(cool - 1), 1000); return () => clearTimeout(t); }, [cool]);
+  async function resend() {
+    setMsg("");
+    const { error } = await sb().auth.resend({ type: "signup", email });
+    if (error) return setMsg(errEs(error));
+    setCool(60); setMsg("Te lo enviamos de nuevo. Revisa también spam o promociones.");
+  }
 
   async function afterLogin() {
     await sb().rpc("claim_my_invitations");
@@ -24,7 +39,7 @@ export default function Login() {
       if (signup) {
         const { data, error } = await sb().auth.signUp({ email, password });
         if (error) throw error;
-        if (!data.session) { setMsg("Te enviamos un correo para confirmar tu cuenta. Confírmalo y luego entra."); return; }
+        if (!data.session) { setSent(true); setCool(60); setMsg("Te enviamos un correo para confirmar tu cuenta. Ábrelo, confírmalo y luego entra aquí con tu correo y contraseña."); return; }
       } else {
         const { error } = await sb().auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -39,7 +54,10 @@ export default function Login() {
         <div><label className="lbl">Correo</label><input className="inp" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <div><label className="lbl">Contraseña</label><input className="inp" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
         <button className="btn-gold w-full" disabled={busy}>{busy ? "Un momento…" : signup ? "Crear cuenta" : "Entrar"}</button>
-        {msg && <p className="text-sm text-red-600">{msg}</p>}
+        {signup && invited && <p className="rounded-2xl bg-[#E3F8EA] p-3 text-sm text-[#0B5B2B]">Tu barbería te invitó. Crea tu cuenta con <b>este mismo correo</b> y, al confirmarlo, entrarás directo a ella.</p>}
+        {msg && <p className={`text-sm ${sent ? "text-[#0B5B2B]" : "text-red-600"}`}>{msg}</p>}
+        {sent && <button type="button" className="btn2 w-full" disabled={cool > 0} onClick={resend}>{cool > 0 ? `Reenviar correo (${cool} s)` : "Reenviar correo"}</button>}
+        {sent && <p className="text-xs text-muted-foreground">Si no lo ves en unos minutos, revisa spam o promociones. ¿Sigue sin llegar? Escríbenos a soporte.</p>}
         <button type="button" className="text-sm underline" onClick={() => setSignup(!signup)}>
           {signup ? "Ya tengo cuenta" : "Soy nuevo / me invitaron: crear cuenta"}
         </button>

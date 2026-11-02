@@ -25,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [ctx, setCtx] = useState<Omit<Ctx, "has"> | null>(null); const [more, setMore] = useState(false); const [entered, setEntered] = useState(false);
   useEffect(() => setMore(false), [path]);
   useEffect(() => setEntered(true), []);
+  const [joined, setJoined] = useState(false);
   // El barbero solo usa Inicio, Agenda y Mis comisiones: si abre a mano otra pantalla (clientes, cobro, caja, libro, ajustes) vuelve a sus comisiones.
   useEffect(() => {
     if (ctx?.role === "barber" && ["/app/clientes", "/app/cobro", "/app/caja", "/app/libro", "/app/ajustes"].some((p) => path === p || path.startsWith(`${p}/`))) router.replace("/app/reportes");
@@ -34,7 +35,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => { (async () => {
     const { data: u } = await sb().auth.getUser();
     if (!u.user) return router.replace("/login");
-    await sb().rpc("claim_my_invitations");
+    // Si la barbería había invitado este correo, aquí queda vinculado a su puesto; se avisa una vez.
+    const { data: claimed } = await sb().rpc("claim_my_invitations");
+    if (Number(claimed) > 0) setJoined(true);
     const { data } = await sb().from("memberships").select("id, role, business:businesses(id,name,slug,timezone,currency)").eq("user_id", u.user.id).eq("active", true).limit(1);
     const m = data?.[0] as { role: Ctx["role"]; id: string; business: Ctx["biz"] } | undefined;
     if (!m) return router.replace("/onboarding");
@@ -84,6 +87,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <button className="text-sm font-bold text-ink/60" onClick={logout}>Salir</button>
           </header>
           <PushPrompt />
+          {joined && <div role="status" className="flex items-center justify-between gap-3 bg-[#E3F8EA] px-4 py-2 text-sm font-semibold text-[#0B5B2B]"><span>¡Bienvenido! Ya eres parte de {ctx.biz.name} como {ROLE_ES[ctx.role]}.</span><button aria-label="Cerrar aviso" className="text-lg leading-none" onClick={() => setJoined(false)}>×</button></div>}
           {trialDays !== null && trialDays <= 7 && ctx.role === "owner" && <Link href="/app/suscripcion" className="block bg-[#D6FF4A] px-4 py-2 text-center text-sm font-bold text-[#070B14]">
             {trialDays > 0 ? `Te ${trialDays === 1 ? "queda 1 día" : `quedan ${trialDays} días`} de prueba · Activar suscripción` : "Tu prueba termina hoy · Activar suscripción"}</Link>}
           <div className="mx-auto max-w-3xl px-4 pb-app-nav pt-4 md:px-8 md:pb-12 md:pt-8">

@@ -43,6 +43,7 @@ export default function Equipo() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [role, setRole] = useState("barber"); const [salary, setSalary] = useState("");
   const [err, setErr] = useState(""); const [ok, setOk] = useState(""); const [busyId, setBusyId] = useState("");
+  const [invite, setInvite] = useState<{ name: string; email: string } | null>(null); const [copiedInvite, setCopiedInvite] = useState(false);
   const [editing, setEditing] = useState("");
   const [ed, setEd] = useState({ name: "", email: "", role: "barber", bookable: true, salary: "" });
   const pick = useRef<HTMLInputElement>(null); const pickFor = useRef("");
@@ -59,6 +60,7 @@ export default function Equipo() {
     if (error) return setErr(errEs(error));
     if (role === "receptionist" && salary) await sb().from("member_compensation").update({ pay_type: "fixed", fixed_salary: toCents(salary), pay_period: "monthly" }).eq("member_id", data.id);
     setOk(email ? `Listo. ${name} debe crear su cuenta con ${email} en /login y entrará directo.` : `Listo. ${name} ya aparece en la agenda y en el link de reservas. Toca su foto para ponerle una.`);
+    if (email.trim()) { setInvite({ name: name.trim(), email: email.trim().toLowerCase() }); setCopiedInvite(false); }
     setName(""); setEmail(""); setSalary(""); setOpen(false); load();
   }
   async function deactivate(m: any) { if (confirm(`¿Desactivar a ${m.display_name}?`)) { const { error } = await sb().from("memberships").update({ active: false }).eq("id", m.id); if (error) setErr(errEs(error)); load(); } }
@@ -132,6 +134,21 @@ export default function Equipo() {
       ))}
       {!open && err && <p role="alert" className="mb-3 rounded-2xl bg-[#FFE1E7] p-3 text-sm text-[#7A0F24]">{err}</p>}
       {ok && <p role="status" className="mb-3 rounded-2xl bg-[#E3F8EA] p-3 text-sm text-[#0B5B2B]">{ok}</p>}
+      {invite && (() => {
+        const link = `${base}/login?modo=registro&correo=${encodeURIComponent(invite.email)}`;
+        const text = `Hola ${invite.name}, te invité a ${biz.name} en Pulso. Crea tu cuenta con este mismo correo (${invite.email}), confírmalo desde el correo que te llegará y entrarás directo a la barbería: ${link}`;
+        return (
+          <section className="card mb-4 space-y-3 border-2 border-[#D6FF4A]" aria-label="Invitación">
+            <div className="flex items-center justify-between"><div className="font-display text-xl font-extrabold uppercase leading-none">Invita a {invite.name}</div>
+              <button type="button" aria-label="Cerrar" className="grid h-9 w-9 place-items-center rounded-full bg-ink/5" onClick={() => setInvite(null)}><X className="h-4 w-4" /></button></div>
+            <p className="text-sm text-ink/70">Mándale este mensaje. Con el enlace, su correo ya aparece escrito; al confirmarlo queda dentro de {biz.name}.</p>
+            <p className="rounded-2xl bg-ink/[0.04] p-3 text-sm">{text}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" className="btn2" onClick={async () => { try { await navigator.clipboard.writeText(text); setCopiedInvite(true); } catch { setErr("No se pudo copiar. Selecciona el texto y cópialo."); } }}>{copiedInvite ? "Copiado" : "Copiar mensaje"}</button>
+              <a className="btn bg-[#25D366]" href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noreferrer">WhatsApp</a>
+            </div>
+          </section>);
+      })()}
 
       <ul className="space-y-3">{active.map((m) => (
         <li key={m.id} className="card min-w-0 space-y-3">
@@ -163,6 +180,7 @@ export default function Equipo() {
             </form>
           ) : (
             <div className="flex gap-2">
+              {!m.user_id && m.invited_email && <button className="btn2 flex-1" onClick={() => { setInvite({ name: m.display_name, email: m.invited_email }); setCopiedInvite(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Invitación</button>}
               {(myRole === "owner" || ["barber", "receptionist"].includes(m.role)) && <button className="btn2 flex-1" onClick={() => startEdit(m)}>Editar</button>}
               {m.role !== "owner" && <button className="btn2 flex-1 text-red-700" onClick={() => deactivate(m)}>Desactivar</button>}
             </div>
