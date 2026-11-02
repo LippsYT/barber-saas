@@ -72,10 +72,12 @@ export async function POST(req: Request) {
       return NextResponse.json({
         status: "pairing", pairingCode, demo: provider.demo, provider: provider.id, phone,
       });
-    } catch {
+    } catch (e) {
+      // El motivo exacto queda en los logs del servidor (sin claves); al usuario solo se le da un mensaje claro.
+      console.error(JSON.stringify({ evt: "wa_pairing_error", provider: provider.id, business: biz.id, name: e instanceof Error ? e.name : "unknown", detail: e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200) }));
       return fail(502, provider.demo
         ? "No se pudo armar el código demo."
-        : "Evolution API no respondió. Revisa EVOLUTION_API_URL y que la instancia acepte emparejamiento.");
+        : "No pudimos conectar con WhatsApp en este momento. Inténtalo en unos minutos o escríbenos a soporte.");
     }
   }
 
