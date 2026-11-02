@@ -74,7 +74,10 @@ export async function POST(req: Request) {
       });
     } catch (e) {
       // El motivo exacto queda en los logs del servidor (sin claves); al usuario solo se le da un mensaje claro.
-      console.error(JSON.stringify({ evt: "wa_pairing_error", provider: provider.id, business: biz.id, name: e instanceof Error ? e.name : "unknown", detail: e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200) }));
+      const cause = e instanceof Error ? (e as Error & { cause?: { code?: string; message?: string } }).cause : undefined;
+      let host = "sin_url";
+      try { host = new URL(process.env.EVOLUTION_API_URL ?? "").host || "url_invalida"; } catch { host = process.env.EVOLUTION_API_URL ? "url_invalida" : "sin_url"; }
+      console.error(JSON.stringify({ evt: "wa_pairing_error", provider: provider.id, business: biz.id, host, name: e instanceof Error ? e.name : "unknown", detail: e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200), cause: cause?.code ?? cause?.message?.slice(0, 120) }));
       return fail(502, provider.demo
         ? "No se pudo armar el código demo."
         : "No pudimos conectar con WhatsApp en este momento. Inténtalo en unos minutos o escríbenos a soporte.");
