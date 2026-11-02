@@ -197,7 +197,7 @@ export function Landing() {
       <Slide id="whatsapp" className="paper-dark min-h-[90svh] text-white">
         <div>
           <Kicker n="05" label="WhatsApp" light />
-          <h2 className="display text-5xl sm:text-7xl">Habla.<br /><span className="bg-[#D6FF4A] px-2 text-ink">Pulso</span><br />lo anota.</h2>
+          <h2 className="display text-5xl sm:text-7xl">Tú atiendes.<br /><span className="bg-[#D6FF4A] px-2 text-ink">Pulso</span><br />avisa.</h2>
           <p className="mt-5 max-w-md text-lg text-white/75">Conecta el WhatsApp de la barbería con un código de 8 caracteres. Confirmaciones y el link de reservas salen de ahí. Si todavía no tienes el servidor, Pulso entra en modo demo y lo dice claro.</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <span className="pill bg-white text-ink"><Bell className="h-3.5 w-3.5" /> Recordatorios</span>
