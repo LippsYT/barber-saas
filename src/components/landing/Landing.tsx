@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, ChevronDown, MessageCircle, Mic } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Bell, MessageCircle } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Chispa } from "@/components/brand/Mascot";
 import { Depth, HeroShapes, Phone3D, Stage3D } from "./Scene3D";
@@ -200,7 +200,7 @@ export function Landing() {
           <h2 className="display text-5xl sm:text-7xl">Habla.<br /><span className="bg-[#D6FF4A] px-2 text-ink">Pulso</span><br />lo anota.</h2>
           <p className="mt-5 max-w-md text-lg text-white/75">Conecta el WhatsApp de la barbería con un código de 8 caracteres. Confirmaciones y el link de reservas salen de ahí. Si todavía no tienes el servidor, Pulso entra en modo demo y lo dice claro.</p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <span className="pill bg-white text-ink"><Mic className="h-3.5 w-3.5" /> Por voz</span>
+            <span className="pill bg-white text-ink"><Bell className="h-3.5 w-3.5" /> Recordatorios</span>
             <span className="pill bg-[#25D366] text-white">WhatsApp</span>
           </div>
         </div>
@@ -208,8 +208,8 @@ export function Landing() {
           <Phone3D dark>
             <div className="px-4 pt-8 text-center">
               <div className="text-xs uppercase tracking-widest text-white/50">Pulso</div>
-              <p className="mt-6 font-display text-3xl font-extrabold uppercase leading-tight">Buenos días.<br />Aquí estoy, cuéntame.</p>
-              <div className="mx-auto mt-8 w-14 rounded-full bg-white/10 py-3 text-[10px]">escuchando</div>
+              <p className="mt-6 font-display text-3xl font-extrabold uppercase leading-tight">Cita confirmada.<br />Te esperamos.</p>
+              <div className="mx-auto mt-8 w-14 rounded-full bg-white/10 py-3 text-[10px]">enviado</div>
             </div>
           </Phone3D>
           <Depth z={100} rotate={-2} delay={1} className="absolute left-0 top-24 z-20 max-w-[220px] rounded-2xl border border-white/10 bg-[#2a2150] p-3 text-sm shadow-2xl">
