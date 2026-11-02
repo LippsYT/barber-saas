@@ -55,6 +55,7 @@ const ERR: Record<string, string> = {
   "User already registered": "Ya existe una cuenta con ese correo. Entra con tu contraseña.",
   "Password should be at least": "La contraseña debe tener al menos 6 caracteres.",
   "rate limit": "Demasiados intentos. Espera unos minutos y vuelve a intentar.",
+  "Error sending confirmation email": "No pudimos enviar el correo de confirmación. Inténtalo de nuevo en unos minutos o escríbenos por soporte.",
   appointments_no_overlap: "El barbero ya tiene una cita en ese horario.",
 };
 export function errEs(e: unknown): string {
