@@ -33,3 +33,26 @@ describe("stripeFailure", () => {
     expect(JSON.parse(String(log.mock.calls[0][0]))).toMatchObject({ where: "billing:addon", detail: "boom" });
   });
 });
+
+import { ensureCurrencyOptions } from "./billing";
+describe("ensureCurrencyOptions", () => {
+  const fake = (price: Record<string, unknown>) => {
+    const update = vi.fn(async () => ({}));
+    return { stripe: { prices: { retrieve: vi.fn(async () => price), update } } as never, update };
+  };
+  it("agrega ARS, BRL y EUR a un precio en USD que no los tiene", async () => {
+    const { stripe, update } = fake({ currency: "usd", unit_amount: 1500, currency_options: {} });
+    await ensureCurrencyOptions(stripe, "price_1");
+    expect(update).toHaveBeenCalledWith("price_1", { currency_options: { ars: { unit_amount: 2100000 }, brl: { unit_amount: 7900 }, eur: { unit_amount: 1200 } } });
+  });
+  it("no toca un precio que ya los tiene", async () => {
+    const { stripe, update } = fake({ currency: "usd", unit_amount: 1500, currency_options: { ars: { unit_amount: 1 }, brl: { unit_amount: 1 }, eur: { unit_amount: 1 } } });
+    await ensureCurrencyOptions(stripe, "price_1");
+    expect(update).not.toHaveBeenCalled();
+  });
+  it("ignora precios que no son en USD", async () => {
+    const { stripe, update } = fake({ currency: "eur", unit_amount: 1200 });
+    await ensureCurrencyOptions(stripe, "price_1");
+    expect(update).not.toHaveBeenCalled();
+  });
+});

@@ -54,7 +54,7 @@ const FAQ = [
   ["¿Mis clientes crean una cuenta para reservar?", "No. Eligen fecha, barbero, servicio y horario, y dejan su nombre y WhatsApp."],
   ["¿Cómo se calculan las comisiones?", "Hay una regla del negocio y, si quieres, una por barbero y servicio: porcentaje o un monto fijo en tu moneda. En cada cobro, “ver cálculo” muestra la cuenta."],
   ["¿Puedo borrar una venta mal hecha?", "No se borra. Se anula con un asiento inverso y un motivo. La caja conserva la historia."],
-  ["¿Cuánto cuesta y en qué moneda?", "Pulso se cobra en dólares: US$ 15 al mes el plan y US$ 15 al mes cada complemento que actives. Los primeros 15 días son gratis con todo incluido y sin permanencia. Los precios de tus servicios los pones en la moneda de tu país: pesos, soles, dólares y más."],
+  ["¿Cuánto cuesta y en qué moneda?", "Pulso se cobra en tu moneda: US$ 15 al mes el plan y US$ 15 cada complemento que actives; en Argentina $ 21.000, en Brasil R$ 79 y en Europa € 12.  Los primeros 15 días son gratis con todo incluido y sin permanencia. Los precios de tus servicios los pones en la moneda de tu país: pesos, soles, dólares y más."],
 ];
 
 export function Landing() {

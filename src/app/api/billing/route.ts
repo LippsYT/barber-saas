@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabaseFromCookies } from "@/lib/supabase-server";
-import { addonPriceId, addonsOfSubscription, billingReady, billingRpc, stripeClient, stripeFailure } from "@/lib/billing";
+import { addonPriceId, addonsOfSubscription, ensureCurrencyOptions, billingReady, billingRpc, stripeClient, stripeFailure } from "@/lib/billing";
 import { addonOf, isAddonKey, keyFromLookup, withNeeds, type AddonKey } from "@/lib/addons";
 import { appBaseUrl } from "@/lib/messaging/templates";
 import { guard } from "@/lib/guard";
+import { billingCurrency } from "@/lib/money";
 
 export const runtime = "nodejs";
 const fail = (status: number, error: string) => NextResponse.json({ error }, { status });
@@ -21,8 +22,8 @@ export async function POST(req: Request) {
   try { sb = await supabaseFromCookies(); } catch { return fail(500, "Falta configurar Supabase."); }
   const { data: auth } = await sb.auth.getUser();
   if (!auth.user) return fail(401, "Entra a tu cuenta para continuar.");
-  const { data: mem } = await sb.from("memberships").select("role, business:businesses(id, name)").eq("user_id", auth.user.id).eq("active", true).limit(1);
-  const row = mem?.[0] as { role?: string; business?: { id: string; name: string } } | undefined;
+  const { data: mem } = await sb.from("memberships").select("role, business:businesses(id, name, currency)").eq("user_id", auth.user.id).eq("active", true).limit(1);
+  const row = mem?.[0] as { role?: string; business?: { id: string; name: string; currency?: string } } | undefined;
   if (!row?.business) return fail(400, "Primero crea tu barbería.");
   if (row.role !== "owner") return fail(403, "Solo el dueño puede administrar la suscripción.");
 
@@ -46,9 +47,12 @@ export async function POST(req: Request) {
       }
       const trial = Number(process.env.STRIPE_TRIAL_DAYS);
       const picked = withNeeds((Array.isArray(body.addons) ? body.addons : []).filter((k): k is AddonKey => typeof k === "string" && isAddonKey(k)));
+      const cur = billingCurrency(row.business.currency);
+      // El plan base también se cobra en ARS, BRL y EUR: se le agregan las opciones de moneda si faltan.
+      if (cur !== "USD") await ensureCurrencyOptions(stripe, process.env.STRIPE_PRICE_ID!);
       const extra = await Promise.all(picked.map(async (k) => ({ price: await addonPriceId(stripe, k), quantity: 1 })));
       const s = await stripe.checkout.sessions.create({
-        mode: "subscription", customer, client_reference_id: row.business.id,
+        mode: "subscription", customer, client_reference_id: row.business.id, currency: cur.toLowerCase(),
         line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }, ...extra],
         subscription_data: { metadata: { business_id: row.business.id }, ...(trial > 0 && !sub?.stripe_subscription_id ? { trial_period_days: Math.min(Math.floor(trial), 90) } : {}) /* la prueba solo la primera vez */ },
         success_url: `${base}/app/suscripcion?ok=1`, cancel_url: `${base}/app/suscripcion`,

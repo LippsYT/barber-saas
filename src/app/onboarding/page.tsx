@@ -10,7 +10,7 @@ import { WhatsAppConnect } from "@/components/app/WhatsAppConnect";
 import { saveServiceBundle } from "@/lib/saveService";
 import { Logo } from "@/components/brand/Logo";
 
-const TZ = [["America/Guayaquil", "Ecuador", "USD"], ["America/Bogota", "Colombia", "COP"], ["America/Argentina/Buenos_Aires", "Argentina", "ARS"], ["America/Mexico_City", "México", "MXN"], ["America/Santiago", "Chile", "CLP"], ["America/Lima", "Perú", "PEN"], ["America/New_York", "EE. UU. (Este)", "USD"]] as const;
+const TZ = [["America/Guayaquil", "Ecuador", "USD"], ["America/Bogota", "Colombia", "COP"], ["America/Argentina/Buenos_Aires", "Argentina", "ARS"], ["America/Mexico_City", "México", "MXN"], ["America/Santiago", "Chile", "CLP"], ["America/Lima", "Perú", "PEN"], ["America/Sao_Paulo", "Brasil", "BRL"], ["Europe/Madrid", "España", "EUR"], ["America/New_York", "EE. UU. (Este)", "USD"]] as const;
 const STEPS = ["Tu barbería", "Logotipo", "Equipo", "Servicios", "Horario", "Contacto", "WhatsApp", "Listo"] as const;
 const TIPS: { text: string }[] = [
   { text: "¡Hola! Te dejo todo listo en unos minutos. Empecemos por el nombre." },

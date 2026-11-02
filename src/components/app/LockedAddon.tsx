@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Lock, Check } from "lucide-react";
-import { formatUsd } from "@/lib/money";
+import { formatPlan } from "@/lib/money";
 import { addonOf, type AddonKey } from "@/lib/addons";
 
 /** Tarjeta que reemplaza una función de un complemento que el negocio todavía no tiene. */
@@ -18,7 +18,7 @@ export function LockedAddon({ addon, compact = false }: { addon: AddonKey; compa
       </div>
       <p className="mt-3 text-sm text-white/75">{a.summary}</p>
       {!compact && <ul className="mt-3 space-y-1.5 text-sm">{a.features.map((f) => <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D6FF4A]" />{f}</li>)}</ul>}
-      <Link href="/app/suscripcion" className="btn-gold mt-4 block w-full text-center">Agregar por {formatUsd(a.price)} al mes</Link>
+      <Link href="/app/suscripcion" className="btn-gold mt-4 block w-full text-center">Agregar por {formatPlan(a.price)} al mes</Link>
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { workerRpc } from "@/lib/workerRpc";
 import { ADDONS, addonLookupKey, keyFromLookup, type AddonKey } from "@/lib/addons";
+import { BILLING_RATES, planPrice } from "@/lib/money";
 
 /** Stripe del servidor. Sin STRIPE_SECRET_KEY la suscripción queda desactivada y la pantalla lo dice. */
 export function stripeClient(): Stripe | null {
@@ -33,14 +34,28 @@ export function stripeFailure(where: string, e: unknown, ctx: Record<string, str
   return { status: 502, message: "No pudimos completar la operación de pago. Ya quedó registrado: si se repite, escríbenos a soporte." };
 }
 
-/** Precio mensual de Stripe de un complemento. Se busca por `lookup_key` y, si no existe, se crea la primera vez. */
+const LOCAL = Object.keys(BILLING_RATES) as (keyof typeof BILLING_RATES)[];
+/** Opciones de moneda (ARS, BRL, EUR) de un precio en USD, calculadas con las tarifas fijas de la app. */
+const currencyOptions = (usdCents: number) => Object.fromEntries(LOCAL.map((c) => [c.toLowerCase(), { unit_amount: planPrice(usdCents, c) }]));
+
+/** Garantiza que un precio en USD de Stripe se pueda cobrar también en ARS, BRL y EUR (`currency_options`). Si ya los tiene, no toca nada. */
+export async function ensureCurrencyOptions(stripe: Stripe, priceId: string): Promise<void> {
+  const p = await stripe.prices.retrieve(priceId, { expand: ["currency_options"] });
+  if (p.currency !== "usd" || p.unit_amount === null) return;
+  const have = p.currency_options ?? {};
+  if (LOCAL.every((c) => c.toLowerCase() in have)) return;
+  await stripe.prices.update(priceId, { currency_options: { ...currencyOptions(p.unit_amount), ...Object.fromEntries(Object.entries(have).map(([k, v]) => [k, { unit_amount: v.unit_amount ?? undefined }])) } as Stripe.PriceUpdateParams["currency_options"] });
+}
+
+/** Precio mensual de Stripe de un complemento. Se busca por `lookup_key` y, si no existe, se crea la primera vez (ya con ARS, BRL y EUR). */
 export async function addonPriceId(stripe: Stripe, key: AddonKey): Promise<string> {
   const lookup = addonLookupKey(key);
   const found = await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1 });
-  if (found.data[0]) return found.data[0].id;
+  if (found.data[0]) { await ensureCurrencyOptions(stripe, found.data[0].id); return found.data[0].id; }
   const a = ADDONS.find((x) => x.key === key)!;
   const created = await stripe.prices.create({
     currency: "usd", unit_amount: a.price, recurring: { interval: "month" }, lookup_key: lookup,
+    currency_options: currencyOptions(a.price) as Stripe.PriceCreateParams["currency_options"],
     product_data: { name: `Pulso · ${a.name}`, metadata: { addon: key } },
   });
   return created.id;

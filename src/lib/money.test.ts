@@ -31,3 +31,25 @@ describe("moneda por negocio", () => {
     expect(formatMoney(2500)).toBe("US$ 25.00");
   });
 });
+
+describe("precio de Pulso por moneda de cobro", () => {
+  it("US$ 15 = ARS 21.000 = R$ 79 = € 12", async () => {
+    const { planPrice, billingCurrency } = await import("./money");
+    expect(planPrice(1500, "USD")).toBe(1500);
+    expect(planPrice(1500, "ARS")).toBe(2100000);
+    expect(planPrice(1500, "BRL")).toBe(7900);
+    expect(planPrice(1500, "EUR")).toBe(1200);
+    expect(planPrice(4500, "BRL")).toBe(23700);
+  });
+  it("monedas que Pulso no cobra caen a USD", async () => {
+    const { billingCurrency } = await import("./money");
+    expect(billingCurrency("COP")).toBe("USD"); expect(billingCurrency("ARS")).toBe("ARS"); expect(billingCurrency(undefined)).toBe("USD");
+  });
+  it("formatPlan sigue la moneda del negocio", async () => {
+    const { formatPlan, setCurrency } = await import("./money");
+    setCurrency("ARS"); expect(formatPlan(1500)).toBe("$ 21.000,00");
+    setCurrency("BRL"); expect(formatPlan(1500)).toBe("R$ 79,00");
+    setCurrency("EUR"); expect(formatPlan(1500)).toBe("€ 12,00");
+    setCurrency("COP"); expect(formatPlan(1500)).toBe("US$ 15.00");
+  });
+});
