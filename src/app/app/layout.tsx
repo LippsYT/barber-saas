@@ -19,6 +19,15 @@ import type { AddonKey } from "@/lib/addons";
 
 const ROLE_ES = { owner: "Dueño", admin: "Admin", receptionist: "Recepción", barber: "Barbero" } as const;
 
+/** Última cabecera vista (negocio, rol, facturación) por usuario, para abrir la app al instante. No guarda datos de clientes ni dinero. */
+const SHELL_KEY = "pulso_shell_v1";
+function readShellCache(uid: string): { ctx: Omit<Ctx, "has">; bill: unknown } | null {
+  try { const v = JSON.parse(localStorage.getItem(SHELL_KEY) ?? "null"); return v && v.uid === uid && v.ctx?.biz?.id ? v : null; } catch { return null; }
+}
+function writeShellCache(uid: string, v: { ctx: Omit<Ctx, "has">; bill: unknown } | null) {
+  try { if (v) localStorage.setItem(SHELL_KEY, JSON.stringify({ uid, ...v })); else localStorage.removeItem(SHELL_KEY); } catch { /* sin almacenamiento: abre normal */ }
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter(); const path = usePathname();
   const reduce = useReducedMotion();
@@ -35,19 +44,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Tema claro/oscuro guardado; al salir de /app se quita para no afectar las páginas públicas.
   useEffect(() => { applySavedTheme(); return () => document.documentElement.classList.remove("app-dark"); }, []);
   useEffect(() => { (async () => {
-    const { data: u } = await sb().auth.getUser();
-    if (!u.user) return router.replace("/login");
-    // Si la barbería había invitado este correo, aquí queda vinculado a su puesto; se avisa una vez.
-    const { data: claimed } = await sb().rpc("claim_my_invitations");
-    if (Number(claimed) > 0) setJoined(true);
-    const { data } = await sb().from("memberships").select("id, role, business:businesses(id,name,slug,timezone,currency)").eq("user_id", u.user.id).eq("active", true).limit(1);
-    const m = data?.[0] as { role: Ctx["role"]; id: string; business: Ctx["biz"] } | undefined;
-    if (!m) return router.replace("/onboarding");
+    // La sesión se lee del dispositivo (sin ir a la red); la seguridad real la ponen las reglas de la base en cada consulta.
+    const { data: sess } = await sb().auth.getSession();
+    const uid = sess.session?.user.id;
+    if (!uid) return router.replace("/login");
+    // Lo último que se vio de este usuario se muestra al instante y se actualiza por detrás.
+    const cached = readShellCache(uid);
+    if (cached) { setCtx(cached.ctx); if (cached.bill) setBilling(cached.bill as Billing); }
+    const memberships = () => sb().from("memberships").select("id, role, business:businesses(id,name,slug,timezone,currency)").eq("user_id", uid).eq("active", true).limit(1);
+    // Las tres consultas son independientes: van juntas en vez de una tras otra.
+    const [claimedRes, memRes, billRes] = await Promise.all([sb().rpc("claim_my_invitations"), memberships(), sb().rpc("my_billing")]);
+    let rows = memRes.data;
+    // Si la barbería había invitado este correo, aquí queda vinculado a su puesto; se avisa una vez y se vuelve a leer el puesto.
+    if (Number(claimedRes.data) > 0) { setJoined(true); rows = (await memberships()).data; }
+    const m = rows?.[0] as unknown as { role: Ctx["role"]; id: string; business: Ctx["biz"] } | undefined;
+    if (!m) { writeShellCache(uid, null); return router.replace("/onboarding"); }
     const role = m.role;
-    // Si la consulta falla (por ejemplo la migración aún no está aplicada) no se bloquea a nadie.
-    const { data: bill } = await sb().rpc("my_billing");
-    if (bill) setBilling(bill as Billing);
-    setCtx({ biz: m.business, role, memberId: m.id, userId: u.user.id, isManager: role === "owner" || role === "admin", canCash: role !== "barber" });
+    // Si la consulta de facturación falla (por ejemplo la migración aún no está aplicada) no se bloquea a nadie.
+    const bill = billRes.data as Billing | null;
+    if (bill) setBilling(bill);
+    const fresh = { biz: m.business, role, memberId: m.id, userId: uid, isManager: role === "owner" || role === "admin", canCash: role !== "barber" };
+    setCtx(fresh);
+    writeShellCache(uid, { ctx: fresh, bill });
   })(); }, [router]);
   setCurrency(ctx?.biz.currency);
   if (!ctx) return <><Splash ready={false} /><div className="grid min-h-screen place-items-center bg-ink text-white"><Logo light /></div></>;
@@ -65,8 +83,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const blocked = billing !== null && !billing.active && !(ctx.role === "owner" && path.startsWith("/app/suscripcion"));
   const trialDays = billing && billing.active && !billing.exempt && !["active", "trialing", "past_due"].includes(billing.status)
     ? Math.ceil((Date.parse(billing.trial_ends_at) - Date.now()) / 86400000) : null;
-  if (blocked) return <><Splash ready /><Paywall isOwner={ctx.role === "owner"} businessName={ctx.biz.name} onLogout={async () => { await sb().auth.signOut(); router.replace("/login"); }} /></>;
-  const logout = async () => { await sb().auth.signOut(); router.replace("/login"); };
+  if (blocked) return <><Splash ready /><Paywall isOwner={ctx.role === "owner"} businessName={ctx.biz.name} onLogout={async () => { writeShellCache("", null); await sb().auth.signOut(); router.replace("/login"); }} /></>;
+  const logout = async () => { writeShellCache("", null); await sb().auth.signOut(); router.replace("/login"); };
   // Las pantallas de configuración cuelgan de Ajustes: el ítem sigue marcado mientras estás en ellas.
   const SETTINGS = ["servicios", "equipo", "horario", "whatsapp", "pulselink", "referidos", "suscripcion", "mensajes", "reglas", "perfil", "inventario", "finanzas", "compartir", "notificaciones", "suscripcion/complementos"];
   const active = (h: string) => path === h || (h === "/app/ajustes" && SETTINGS.some((s) => path === `/app/${s}`));

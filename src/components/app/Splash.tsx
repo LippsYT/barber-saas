@@ -30,7 +30,7 @@ export function Splash({ ready }: { ready: boolean }) {
   const [show, setShow] = useState(true);
   const [minDone, setMinDone] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setMinDone(true), reduce ? 900 : 1900);
+    const t = setTimeout(() => setMinDone(true), reduce ? 600 : 1200);
     return () => clearTimeout(t);
   }, [reduce]);
   useEffect(() => { if (minDone && ready) setShow(false); }, [minDone, ready]);
