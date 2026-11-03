@@ -24,7 +24,8 @@
   input[type=date], input[type=time], input[type=datetime-local], input[type=month] { display: block; width: 100%; min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; text-align: left; }
   input[type=date]::-webkit-date-and-time-value { text-align: left; min-height: 1.5em; }
   @media (display-mode: standalone) {
-    html { overscroll-behavior-y: none; }
+    /* El rebote elástico de iOS se deja activo (como en una app nativa). */
+    html { overscroll-behavior-y: auto; }
     body { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
   }
   html { scroll-behavior: smooth; }

@@ -34,10 +34,18 @@ export function Splash({ ready }: { ready: boolean }) {
     return () => clearTimeout(t);
   }, [reduce]);
   useEffect(() => { if (minDone && ready) setShow(false); }, [minDone, ready]);
+  // Mientras la pantalla de entrada está, el fondo de toda la página (también bajo la hora y la batería en iPhone) es oscuro:
+  // así no se ve una franja clara arriba. Al irse, se devuelve el fondo normal.
+  useEffect(() => {
+    if (!show) return;
+    const el = document.documentElement; const prev = el.style.backgroundColor;
+    el.style.backgroundColor = "#070B14";
+    return () => { el.style.backgroundColor = prev; };
+  }, [show]);
   return (
     <AnimatePresence>
       {show && (
-        <motion.div key="splash" role="presentation" className="fixed inset-0 z-[100] grid place-items-center bg-[#070B14]"
+        <motion.div key="splash" role="presentation" className="fixed inset-0 z-[100] grid place-items-center bg-[#070B14]" style={{ minHeight: "100lvh" }}
           exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.45, ease }}>
           <SplashMark />
         </motion.div>
