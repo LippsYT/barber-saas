@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, ChevronDown, Bell, MessageCircle } from "lucide-react";
 import { ADDONS, BASE_FEATURES, BASE_PRICE, PLAN_NAME } from "@/lib/addons";
 import { formatUsd } from "@/lib/money";
+import { InstallIos } from "@/components/InstallIos";
 import { Logo } from "@/components/brand/Logo";
 import { Chispa } from "@/components/brand/Mascot";
 import { Depth, HeroShapes, Phone3D, Stage3D } from "./Scene3D";
@@ -60,6 +61,7 @@ const FAQ = [
 export function Landing() {
   return (
     <div className="bg-[#F4F1E8] text-ink">
+      <InstallIos />
       <a href="#inicio" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#D6FF4A] focus:text-ink focus:px-3 focus:py-2">Saltar al contenido</a>
       <header className="sticky top-0 z-30 border-b border-black/5 bg-[#F4F1E8]/85 pt-safe backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">

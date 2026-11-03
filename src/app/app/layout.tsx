@@ -14,6 +14,7 @@ import { Splash } from "@/components/app/Splash";
 import { Paywall } from "@/components/app/Paywall";
 import { LockedAddon } from "@/components/app/LockedAddon";
 import { PushPrompt } from "@/components/app/PushPrompt";
+import { InstallIos } from "@/components/InstallIos";
 import type { AddonKey } from "@/lib/addons";
 
 const ROLE_ES = { owner: "Dueño", admin: "Admin", receptionist: "Recepción", barber: "Barbero" } as const;
@@ -89,6 +90,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <button className="text-sm font-bold text-ink/60" onClick={logout}>Salir</button>
           </header>
           <PushPrompt />
+          <InstallIos />
           {joined && <div role="status" className="flex items-center justify-between gap-3 bg-[#E3F8EA] px-4 py-2 text-sm font-semibold text-[#0B5B2B]"><span>¡Bienvenido! Ya eres parte de {ctx.biz.name} como {ROLE_ES[ctx.role]}.</span><button aria-label="Cerrar aviso" className="text-lg leading-none" onClick={() => setJoined(false)}>×</button></div>}
           {trialDays !== null && trialDays <= 7 && ctx.role === "owner" && <Link href="/app/suscripcion" className="block bg-[#D6FF4A] px-4 py-2 text-center text-sm font-bold text-[#070B14]">
             {trialDays > 0 ? `Te ${trialDays === 1 ? "queda 1 día" : `quedan ${trialDays} días`} de prueba · Activar suscripción` : "Tu prueba termina hoy · Activar suscripción"}</Link>}
