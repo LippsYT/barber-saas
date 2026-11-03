@@ -45,7 +45,7 @@ export function Splash({ ready }: { ready: boolean }) {
   return (
     <AnimatePresence>
       {show && (
-        <motion.div key="splash" role="presentation" className="fixed inset-0 z-[100] grid place-items-center bg-[#070B14]" style={{ minHeight: "100lvh" }}
+        <motion.div key="splash" data-splash role="presentation" className="fixed inset-0 z-[100] grid place-items-center bg-[#070B14]" style={{ minHeight: "100lvh" }}
           exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.45, ease }}>
           <SplashMark />
         </motion.div>

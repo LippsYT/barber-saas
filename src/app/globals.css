@@ -28,6 +28,8 @@
     html { overscroll-behavior-y: auto; }
     body { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
   }
+  /* Con la pantalla de entrada visible, toda la página (también bajo la hora y la batería) es oscura desde el primer pintado: sin franja clara arriba. */
+  html:has([data-splash]) { background-color: #070B14; }
   html { scroll-behavior: smooth; }
   body { @apply bg-background text-foreground font-sans antialiased; }
   h1, h2, h3 { @apply tracking-tight; }
