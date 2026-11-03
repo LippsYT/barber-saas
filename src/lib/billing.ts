@@ -10,8 +10,8 @@ export function stripeClient(): Stripe | null {
 }
 export const billingReady = () => Boolean(process.env.STRIPE_SECRET_KEY?.trim() && process.env.STRIPE_PRICE_ID?.trim());
 
-/** Quita de un texto cualquier clave de Stripe (sk_/rk_/pk_ …) antes de registrarlo. */
-export const redact = (m: string) => m.replace(/\b[a-z]{2}_(?:live|test)_[A-Za-z0-9*_]+/gi, "[clave]").slice(0, 300);
+/** Quita de un texto las claves de Stripe (sk_/rk_/pk_ …) y los correos antes de registrarlo. */
+export const redact = (m: string) => m.replace(/\b[a-z]{2}_(?:live|test)_[A-Za-z0-9*_]+/gi, "[clave]").replace(/[^\s'"<>]+@[^\s'"<>]+/g, "[correo]").slice(0, 300);
 
 /**
  * Convierte un fallo de Stripe (o de nuestra base) en un mensaje claro para el dueño y lo deja en los logs.
