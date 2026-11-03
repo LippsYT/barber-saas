@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 
 /** Dominios de las RPC que solo debe llamar el servidor. Cada uno tiene su propio token derivado del CRON_SECRET. */
-export type WorkerScope = "messages" | "billing" | "report" | "push" | "wa";
+export type WorkerScope = "messages" | "billing" | "report" | "push" | "wa" | "metrics";
 
 /** Token de un dominio: sha256("dominio:secreto"). La base lo recalcula con el secreto del vault (migración 0032). */
 export const scopedToken = (scope: WorkerScope, secret: string) => createHash("sha256").update(`${scope}:${secret}`).digest("hex");

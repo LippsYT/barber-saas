@@ -77,6 +77,14 @@ export function billingRpc() {
       const { error } = await rpc("billing_link_customer", { p_business: business, p_customer: customer });
       if (error) throw new Error(error.message);
     },
+    /** Guarda un pago de Stripe (factura pagada) para las métricas. Devuelve true si era nuevo. */
+    async recordPayment(inv: { id: string; customer: string; amount: number; currency: string; paidAt: number | null }) {
+      const { data, error } = await rpc("billing_record_payment", {
+        p_customer: inv.customer, p_invoice: inv.id, p_amount: inv.amount, p_currency: inv.currency,
+        p_paid_at: inv.paidAt ? new Date(inv.paidAt * 1000).toISOString() : null });
+      if (error) throw new Error(error.message);
+      return Boolean(data);
+    },
     async sync(sub: Stripe.Subscription) {
       const customer = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
       // Las versiones nuevas de la API del periodo viven en el ítem; las viejas, en la suscripción.

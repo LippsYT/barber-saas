@@ -31,6 +31,13 @@ export async function POST(req: Request) {
     } else if (event.type === "customer.subscription.deleted") {
       const sub = event.data.object as Stripe.Subscription;
       synced(await billingRpc().sync(sub), sub);
+    } else if (event.type === "invoice.paid") {
+      // Cada cobro real queda registrado para las métricas (las facturas de 0 de una prueba no cuentan).
+      const inv = event.data.object as Stripe.Invoice;
+      const customer = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+      if (inv.id && customer && inv.amount_paid > 0) {
+        await billingRpc().recordPayment({ id: inv.id, customer, amount: inv.amount_paid, currency: inv.currency, paidAt: inv.status_transitions?.paid_at ?? null });
+      }
     } else if (event.type === "checkout.session.completed") {
       const s = event.data.object as Stripe.Checkout.Session;
       if (s.mode === "subscription" && typeof s.subscription === "string") {
