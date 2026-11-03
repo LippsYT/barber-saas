@@ -22,7 +22,9 @@ export async function GET(req: Request) {
   const blocked = guard(req, { key: "metrics", max: 60 });
   if (blocked) return blocked;
   const key = process.env.METRICS_API_KEY?.trim();
-  if (!key || key.length < 32) return fail(503, "no_configurado");
+  if (!key) return fail(503, "no_configurado");
+  // Una clave corta es adivinable: no se acepta. Se dice distinto para que se note que el valor quedó mal copiado.
+  if (key.length < 32) return fail(503, "clave_muy_corta");
   const given = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   if (!given || !sameKey(given, key)) return fail(401, "no_autorizado");
 

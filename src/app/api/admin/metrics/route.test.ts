@@ -20,7 +20,9 @@ describe("GET /api/admin/metrics", () => {
   });
   it("una clave corta no se acepta aunque coincida", async () => {
     process.env.METRICS_API_KEY = "corta";
-    expect((await call("Bearer corta")).status).toBe(503);
+    const r = await call("Bearer corta");
+    expect(r.status).toBe(503);
+    expect(await r.json()).toEqual({ error: "clave_muy_corta" });
   });
   it("con la clave devuelve las métricas y el MRR por moneda, sin active_subs", async () => {
     rpc.mockResolvedValue({ data: { signups: { total: 3 }, active_subs: [{ currency: "USD", addons: ["whatsapp"] }, { currency: "ARS", addons: [] }, { currency: "COP", addons: [] }], events: [] }, error: null });
