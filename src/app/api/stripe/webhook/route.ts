@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { billingRpc, stripeClient, stripeFailure } from "@/lib/billing";
+import { DISCORD_COLORS, notifyDiscord } from "@/lib/discord";
+import { workerRpc } from "@/lib/workerRpc";
 
 export const runtime = "nodejs";
 
@@ -36,7 +38,8 @@ export async function POST(req: Request) {
       const inv = event.data.object as Stripe.Invoice;
       const customer = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
       if (inv.id && customer && inv.amount_paid > 0) {
-        await billingRpc().recordPayment({ id: inv.id, customer, amount: inv.amount_paid, currency: inv.currency, paidAt: inv.status_transitions?.paid_at ?? null });
+        const isNew = await billingRpc().recordPayment({ id: inv.id, customer, amount: inv.amount_paid, currency: inv.currency, paidAt: inv.status_transitions?.paid_at ?? null });
+        if (isNew) await notifyPayment(inv.id, inv.amount_paid, inv.currency);
       }
     } else if (event.type === "checkout.session.completed") {
       const s = event.data.object as Stripe.Checkout.Session;
@@ -51,4 +54,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "error" }, { status: 500 });
   }
   return NextResponse.json({ received: true });
+}
+
+/** Aviso de un cobro nuevo a Discord. El nombre del negocio sale del feed de métricas; si algo falla, el cobro ya quedó guardado y no se reintenta. */
+async function notifyPayment(invoiceId: string, cents: number, currency: string) {
+  try {
+    let business = "—";
+    const { data } = await workerRpc("metrics")("admin_metrics", { p_since: new Date(Date.now() - 10 * 60_000).toISOString() });
+    const events = ((data as { events?: { id?: string; business?: string | null }[] } | null)?.events) ?? [];
+    business = events.find((e) => e.id === `payment:${invoiceId}`)?.business ?? business;
+    await notifyDiscord({ title: "💸 Pago recibido", color: DISCORD_COLORS.payment, fields: [{ name: "Barbería", value: business }, { name: "Monto", value: `${(cents / 100).toFixed(2)} ${currency.toUpperCase()}` }] });
+  } catch { /* sin aviso: no afecta al cobro */ }
 }

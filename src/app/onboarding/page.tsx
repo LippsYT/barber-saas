@@ -115,6 +115,7 @@ export default function Onboarding() {
     const { data: row } = await sb().from("businesses").select("id, slug, name, trial_ends_at").eq("id", data).single();
     const b = row as unknown as Biz & { trial_ends_at: string | null };
     setBiz({ id: b.id, slug: b.slug, name: b.name }); setSlug(b.slug); setTrialDays(daysLeft(b.trial_ends_at));
+    void fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "signup" }) }).catch(() => {});
     const team = await refreshTeam(b.id); setTotal(Math.max(1, team.length));
     setBusy(false); go(1);
   }
