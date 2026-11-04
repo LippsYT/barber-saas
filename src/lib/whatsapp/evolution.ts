@@ -48,6 +48,10 @@ export function createEvolutionProvider(cfg: EvolutionConfig): WhatsAppProvider 
       }
     },
     async connectPairing(instanceName, phoneDigits) {
+      // Evolution no entrega código de vinculación a una instancia que ya está conectada: para cambiar de número se cierra primero la sesión anterior.
+      let current: LinkState = "close";
+      try { current = parseEvolutionState(await call(`/instance/connectionState/${encodeURIComponent(instanceName)}`)); } catch { /* si no responde el estado, se intenta conectar igual */ }
+      if (current === "open") await call(`/instance/logout/${encodeURIComponent(instanceName)}`, { method: "DELETE" });
       const body = await call(`/instance/connect/${encodeURIComponent(instanceName)}?number=${encodeURIComponent(phoneDigits)}`);
       return parseEvolutionConnect(body);
     },

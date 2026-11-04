@@ -39,12 +39,13 @@ describe("Evolution API v2", () => {
 
   it("create, connect con number y connectionState usan los paths v2", async () => {
     const calls: { url: string; method?: string; body?: string }[] = [];
+    let states = ["close", "open"];
     const fetchImpl: typeof fetch = async (input, init) => {
       calls.push({ url: String(input), method: init?.method, body: init?.body as string | undefined });
       const url = String(input);
       if (url.endsWith("/instance/create")) return new Response("{}", { status: 201 });
       if (url.includes("/instance/connect/")) return new Response(JSON.stringify({ pairingCode: "QWER-TY12" }), { status: 200 });
-      if (url.includes("/instance/connectionState/")) return new Response(JSON.stringify({ instance: { state: "open" } }), { status: 200 });
+      if (url.includes("/instance/connectionState/")) return new Response(JSON.stringify({ instance: { state: states.shift() ?? "open" } }), { status: 200 });
       return new Response("no", { status: 404 });
     };
     const p = createEvolutionProvider({ baseUrl: "https://evo.example/api/", apiKey: "sekrit", fetchImpl });
@@ -57,11 +58,32 @@ describe("Evolution API v2", () => {
     expect(calls[0].url).toBe("https://evo.example/api/instance/create");
     expect(calls[0].method).toBe("POST");
     expect(JSON.parse(calls[0].body!)).toMatchObject({ instanceName: "pulso-house-davidson", integration: "WHATSAPP-BAILEYS", qrcode: false });
-    expect(calls[1].url).toContain("/instance/connect/pulso-house-davidson?number=593999111222");
-    expect(calls[2].url).toContain("/instance/connectionState/pulso-house-davidson");
+    expect(calls[1].url).toContain("/instance/connectionState/pulso-house-davidson");
+    expect(calls[2].url).toContain("/instance/connect/pulso-house-davidson?number=593999111222");
+    expect(calls[3].url).toContain("/instance/connectionState/pulso-house-davidson");
+    expect(calls.some((c) => c.url.includes("/instance/logout/"))).toBe(false);
     const headers = new Headers();
     expect(calls.every((c) => !c.url.includes("sekrit"))).toBe(true);
     void headers;
+  });
+
+  it("si la instancia ya está conectada, cierra la sesión anterior antes de pedir el código del número nuevo", async () => {
+    const calls: { url: string; method?: string }[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      calls.push({ url: String(input), method: init?.method });
+      const url = String(input);
+      if (url.includes("/instance/connectionState/")) return new Response(JSON.stringify({ instance: { state: "open" } }), { status: 200 });
+      if (url.includes("/instance/logout/")) return new Response("{}", { status: 200 });
+      if (url.includes("/instance/connect/")) return new Response(JSON.stringify({ pairingCode: "ABCD-1234" }), { status: 200 });
+      return new Response("no", { status: 404 });
+    };
+    const p = createEvolutionProvider({ baseUrl: "https://evo.example", apiKey: "k", fetchImpl });
+    expect(await p.connectPairing("pulso-lumos-studio", "593968467113")).toBe("ABCD1234");
+    expect(calls.map((c) => `${c.method ?? "GET"} ${new URL(c.url).pathname}`)).toEqual([
+      "GET /instance/connectionState/pulso-lumos-studio",
+      "DELETE /instance/logout/pulso-lumos-studio",
+      "GET /instance/connect/pulso-lumos-studio",
+    ]);
   });
 
   it("si la instancia ya existe, sigue", async () => {
