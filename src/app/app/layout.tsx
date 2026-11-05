@@ -66,10 +66,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const fresh = { biz: m.business, role, memberId: m.id, userId: uid, isManager: role === "owner" || role === "admin", canCash: role !== "barber" };
     setCtx(fresh);
     writeShellCache(uid, { ctx: fresh, bill });
-    // Aviso de «en línea» al dueño de Pulso: una vez cada 6 horas por dispositivo, no en cada pantalla.
+    // Aviso de «en línea» al dueño de Pulso: una vez cada vez que se abre la app (por pestaña o sesión), no en cada pantalla.
     try {
-      const last = Number(localStorage.getItem("pulso_online_ping") ?? 0);
-      if (Date.now() - last > 6 * 3600_000) { localStorage.setItem("pulso_online_ping", String(Date.now())); void fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "online" }) }).catch(() => {}); }
+      if (!sessionStorage.getItem("pulso_online_ping")) { sessionStorage.setItem("pulso_online_ping", "1"); void fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "online" }) }).catch(() => {}); }
     } catch { /* sin almacenamiento: no se avisa */ }
   })(); }, [router]);
   setCurrency(ctx?.biz.currency);
